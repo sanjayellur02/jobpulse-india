@@ -2,9 +2,6 @@ import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 
 // Use service role key for admin operations (registration)
-console.log('Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL);
-console.log('Anon key exists:', !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
-console.log('Service role key exists:', !!process.env.SUPABASE_SERVICE_ROLE_KEY);
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -21,33 +18,51 @@ export async function POST(request: NextRequest) {
   try {
     const { full_name, email, phone, password } = await request.json();
 
-    console.log('Register request:', { full_name, email, phone });
-
-    // Validation
+    // Validation: Required fields
     if (!full_name || !email || !phone || !password) {
-      console.log('Missing fields:', { full_name, email, phone, password });
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
       );
     }
 
-    if (password.length < 6) {
+    // Email validation (Q6)
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
       return NextResponse.json(
-        { error: 'Password must be at least 6 characters' },
+        { error: 'Invalid email format' },
+        { status: 400 }
+      );
+    }
+
+    // Password validation (Q5): min 8 chars, 1 uppercase, 1 number
+    if (password.length < 8) {
+      return NextResponse.json(
+        { error: 'Password must be at least 8 characters' },
+        { status: 400 }
+      );
+    }
+
+    if (!/[A-Z]/.test(password)) {
+      return NextResponse.json(
+        { error: 'Password must contain at least one uppercase letter' },
+        { status: 400 }
+      );
+    }
+
+    if (!/[0-9]/.test(password)) {
+      return NextResponse.json(
+        { error: 'Password must contain at least one number' },
         { status: 400 }
       );
     }
 
     // Register user with Supabase Auth (auto-confirm, no email verification)
-    console.log('Attempting Supabase auth signup for:', email);
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
       email_confirm: true, // Auto-confirm email - NO verification needed
     });
-
-    console.log('Auth signup response:', { authError, userId: authData?.user?.id });
 
     // Check if user was created or already exists
     if (authError) {
@@ -91,17 +106,52 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json(
-      {
-        success: true,
-        message: 'Registration successful. Please login to continue.',
-        user: {
-          id: authData.user.id,
-          email: authData.user.email,
-        },
-      },
-      { status: 201 }
-    );
+    // Immediately sign the user in to create a session and set HttpOnly cookies.
+    // Use the regular anon client since the user is now confirmed.
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (signInError || !signInData.session) {
+      // If we can't create a session, return success for registration but ask user to login.
+      return NextResponse.json({ success: true, message: 'Registration successful. Please login to continue.', user: { id: authData.user.id, email: authData.user.email } }, { status: 201 });
+    }
+
+    // Set HttpOnly cookies for auth so middleware can use them.
+    const response = NextResponse.json({ success: true, message: 'Registration successful.', user: { id: authData.user.id, email: authData.user.email } }, { status: 201 });
+
+    const accessToken = signInData.session.access_token;
+    const refreshToken = signInData.session.refresh_token;
+
+    let accessMaxAge = undefined as number | undefined;
+    if (signInData.session.expires_at) {
+      const expiresMs = signInData.session.expires_at * 1000;
+      const maxAgeSeconds = Math.max(0, Math.floor((expiresMs - Date.now()) / 1000));
+      accessMaxAge = maxAgeSeconds || undefined;
+    }
+
+    if (accessToken) {
+      response.cookies.set('auth_token', accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: accessMaxAge,
+      });
+    }
+
+    if (refreshToken) {
+      response.cookies.set('auth_refresh', refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 60 * 60 * 24 * 30,
+      });
+    }
+
+    return response;
   } catch (error) {
     console.error('Registration error:', error);
     return NextResponse.json(

@@ -10,59 +10,61 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const state = searchParams.get('state');
-
-    let queryBuilder = supabase.from('users').select('employment_status, state');
-
+    // If a specific state is requested, compute counts for that state only
     if (state) {
-      queryBuilder = queryBuilder.eq('state', state);
+      const statuses = ['Employed', 'Unemployed', 'Internship', 'Freelancing', 'Part-time'];
+      const counts = await Promise.all(
+        statuses.map(async (s) => {
+          const { count } = await supabase
+            .from('users')
+            .select('*', { count: 'exact', head: true })
+            .eq('state', state)
+            .eq('employment_status', s);
+          return { status: s, count: count || 0 };
+        })
+      );
+
+      const total = counts.reduce((acc, c) => acc + c.count, 0);
+
+      return NextResponse.json({
+        state: state,
+        total_users: total,
+        breakdown: counts,
+      });
     }
 
-    const { data: users, error } = await queryBuilder;
+    // No state specified: return per-state totals using a bounded list of states
+    const { indianStates } = await import('@/lib/utils');
 
-    if (error) {
-      throw error;
-    }
+    const stateCounts = await Promise.all(
+      indianStates.map(async (st) => {
+        const { count } = await supabase
+          .from('users')
+          .select('*', { count: 'exact', head: true })
+          .eq('state', st);
+        return { state: st, total: count || 0 };
+      })
+    );
 
-    // Calculate statistics
-    const stateStats = new Map();
-    users?.forEach((user) => {
-      const key = user.state || 'Unknown';
-      if (!stateStats.has(key)) {
-        stateStats.set(key, {
-          state: key,
-          total: 0,
-          employed: 0,
-          unemployed: 0,
-          internship: 0,
-          freelancing: 0,
-          part_time: 0,
-        });
-      }
+    // Attach simple employment/unemployment rates per state (optional, can be expanded)
+    const statesWithRates = await Promise.all(
+      stateCounts.map(async (s) => {
+        const { count: employed } = await supabase
+          .from('users')
+          .select('*', { count: 'exact', head: true })
+          .eq('state', s.state)
+          .eq('employment_status', 'Employed');
+        const total = s.total || 0;
+        return {
+          state: s.state,
+          total: total,
+          employed: employed || 0,
+          employment_rate: total ? ((employed || 0) / total * 100).toFixed(1) : '0',
+        };
+      })
+    );
 
-      const stats = stateStats.get(key);
-      stats.total += 1;
-
-      if (user.employment_status === 'Employed') stats.employed += 1;
-      else if (user.employment_status === 'Unemployed') stats.unemployed += 1;
-      else if (user.employment_status === 'Internship') stats.internship += 1;
-      else if (user.employment_status === 'Freelancing') stats.freelancing += 1;
-      else if (user.employment_status === 'Part-time') stats.part_time += 1;
-    });
-
-    // Add employment rates
-    const statesArray = Array.from(stateStats.values()).map((stats) => ({
-      ...stats,
-      employment_rate: stats.total
-        ? ((stats.employed / stats.total) * 100).toFixed(1)
-        : '0',
-      unemployment_rate: stats.total
-        ? ((stats.unemployed / stats.total) * 100).toFixed(1)
-        : '0',
-    }));
-
-    return NextResponse.json({
-      state_data: statesArray.sort((a, b) => b.total - a.total),
-    });
+    return NextResponse.json({ state_data: statesWithRates.sort((a, b) => b.total - a.total) });
   } catch (error) {
     console.error('Error fetching state analytics:', error);
     return NextResponse.json(

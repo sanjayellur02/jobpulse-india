@@ -1,23 +1,48 @@
 'use client';
 
+import React, { useEffect, useState } from 'react';
 import { TrendingUp, Users, MapPin, Briefcase } from 'lucide-react';
 
 export default function RankingsPage() {
-  const stateRankings = [
-    { rank: 1, state: 'Telangana', total_users: 8234, employed: 5891, unemployment_rate: 28.4 },
-    { rank: 2, state: 'Karnataka', total_users: 7834, employed: 5234, unemployment_rate: 33.2 },
-    { rank: 3, state: 'Tamil Nadu', total_users: 7123, employed: 4892, unemployment_rate: 31.3 },
-    { rank: 4, state: 'Maharashtra', total_users: 6456, employed: 3891, unemployment_rate: 39.7 },
-    { rank: 5, state: 'Goa', total_users: 2134, employed: 1834, unemployment_rate: 14.1 },
-  ];
+  const [stateRankings, setStateRankings] = useState<any[]>([]);
+  const [degreeRankings, setDegreeRankings] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const degreeRankings = [
-    { degree: 'B.Tech', total_users: 3421, employed: 2156, unemployment_rate: 36.9 },
-    { degree: 'BCA', total_users: 2890, employed: 1623, unemployment_rate: 43.8 },
-    { degree: 'B.Sc', total_users: 2134, employed: 1456, unemployment_rate: 31.8 },
-    { degree: 'M.Tech', total_users: 1876, employed: 1523, unemployment_rate: 18.8 },
-    { degree: 'MBA', total_users: 1342, employed: 1234, unemployment_rate: 8.0 },
-  ];
+  useEffect(() => {
+    const fetchRankings = async () => {
+      try {
+        const res = await fetch('/api/analytics/state');
+        if (res.ok) {
+          const data = await res.json();
+          // state_data returns array sorted by total desc
+          setStateRankings(data.state_data.map((s: any, i: number) => ({ rank: i + 1, ...s })));
+        }
+
+        // Degree rankings aren't implemented via API yet — keep placeholder until backend is added
+        setDegreeRankings([
+          { degree: 'B.Tech', total_users: 3421, employed: 2156, unemployment_rate: 36.9 },
+          { degree: 'BCA', total_users: 2890, employed: 1623, unemployment_rate: 43.8 },
+          { degree: 'B.Sc', total_users: 2134, employed: 1456, unemployment_rate: 31.8 },
+          { degree: 'M.Tech', total_users: 1876, employed: 1523, unemployment_rate: 18.8 },
+          { degree: 'MBA', total_users: 1342, employed: 1234, unemployment_rate: 8.0 },
+        ]);
+      } catch (e) {
+        console.error('Failed to fetch rankings', e);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRankings();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-2xl text-gray-600">Loading rankings...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">

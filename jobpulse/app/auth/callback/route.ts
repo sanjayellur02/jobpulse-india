@@ -9,7 +9,6 @@ export async function GET(request: NextRequest) {
 
   // Handle errors from OAuth provider
   if (error) {
-    console.error('Auth callback error:', error, error_description);
     return NextResponse.redirect(
       new URL(`/auth/login?error=${encodeURIComponent(error_description || error)}`, request.url)
     );
@@ -28,13 +27,12 @@ export async function GET(request: NextRequest) {
     const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
 
     if (exchangeError) {
-      console.error('Token exchange error:', exchangeError);
       return NextResponse.redirect(
         new URL(`/auth/login?error=${encodeURIComponent(exchangeError.message)}`, request.url)
       );
     }
 
-    if (!data?.user?.id) {
+    if (!data?.user?.id || !data?.session) {
       return NextResponse.redirect(
         new URL('/auth/login?error=Failed to authenticate', request.url)
       );
@@ -60,10 +58,29 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Redirect to dashboard on success
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+    // Create response and set HttpOnly auth cookies
+    const response = NextResponse.redirect(new URL('/dashboard', request.url));
+
+    // Set auth_token cookie (access token)
+    response.cookies.set('auth_token', data.session.access_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: data.session.expires_in || 3600, // expires_in is typically 3600 (1 hour)
+      path: '/',
+    });
+
+    // Set auth_refresh cookie (refresh token) with longer expiry
+    response.cookies.set('auth_refresh', data.session.refresh_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 604800 * 2, // 2 weeks (refresh tokens last ~2 weeks with Supabase)
+      path: '/',
+    });
+
+    return response;
   } catch (error) {
-    console.error('Callback error:', error);
     return NextResponse.redirect(
       new URL('/auth/login?error=Authentication failed', request.url)
     );

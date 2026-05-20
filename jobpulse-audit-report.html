@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JobPulse India — Full Production Audit Report</title>
+<style>
+  :root {
+    --red: #E24B4A; --red-light: #FCEBEB; --red-dark: #A32D2D;
+    --amber: #BA7517; --amber-light: #FAEEDA; --amber-dark: #633806;
+    --green: #3B6D11; --green-light: #EAF3DE; --green-dark: #27500A;
+    --blue: #185FA5; --blue-light: #E6F1FB; --blue-dark: #0C447C;
+    --gray: #5F5E5A; --gray-light: #F1EFE8; --gray-dark: #444441;
+    --purple: #534AB7; --purple-light: #EEEDFE;
+    --bg: #FAFAF9; --surface: #fff; --border: rgba(0,0,0,0.12);
+    --text: #1a1a18; --text-muted: #5F5E5A;
+    --radius: 8px; --radius-lg: 12px;
+    --font: 'Segoe UI', system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font); background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.6; }
+  .wrapper { max-width: 1100px; margin: 0 auto; padding: 48px 24px; }
+
+  /* HEADER */
+  .report-header { background: #0C1B33; color: #fff; border-radius: var(--radius-lg); padding: 48px; margin-bottom: 40px; }
+  .report-header h1 { font-size: 32px; font-weight: 700; margin-bottom: 8px; letter-spacing: -0.5px; }
+  .report-header p { color: rgba(255,255,255,0.65); font-size: 15px; }
+  .score-row { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 32px; }
+  .score-badge { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: var(--radius); padding: 12px 20px; text-align: center; min-width: 130px; }
+  .score-badge .num { font-size: 28px; font-weight: 700; }
+  .score-badge .lbl { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: rgba(255,255,255,0.55); margin-top: 4px; }
+  .score-badge.red .num { color: #F09595; }
+  .score-badge.amber .num { color: #FAC775; }
+  .score-badge.green .num { color: #C0DD97; }
+  .verdict { display: inline-block; margin-top: 24px; background: #E24B4A; color: #fff; font-weight: 700; font-size: 14px; padding: 8px 20px; border-radius: 999px; letter-spacing: 0.5px; }
+
+  /* SECTIONS */
+  h2.section-title { font-size: 22px; font-weight: 700; margin: 48px 0 20px; padding-bottom: 10px; border-bottom: 2px solid var(--border); display: flex; align-items: center; gap: 10px; }
+  h2.section-title .pill { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 999px; vertical-align: middle; }
+  .pill.red { background: var(--red-light); color: var(--red-dark); }
+  .pill.amber { background: var(--amber-light); color: var(--amber-dark); }
+  .pill.green { background: var(--green-light); color: var(--green-dark); }
+  .pill.blue { background: var(--blue-light); color: var(--blue-dark); }
+
+  /* TABLES */
+  .tbl-wrap { overflow-x: auto; border-radius: var(--radius-lg); border: 1px solid var(--border); margin-bottom: 28px; background: var(--surface); }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { background: var(--gray-light); color: var(--gray-dark); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+  td { padding: 11px 14px; border-bottom: 1px solid rgba(0,0,0,0.06); vertical-align: top; line-height: 1.5; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #FAFAF8; }
+
+  /* PRIORITY BADGES */
+  .prio { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 999px; white-space: nowrap; }
+  .prio.critical { background: #F7C1C1; color: #791F1F; }
+  .prio.high { background: #FAC775; color: #633806; }
+  .prio.medium { background: #B5D4F4; color: #0C447C; }
+  .prio.low { background: var(--gray-light); color: var(--gray-dark); }
+
+  /* CARDS */
+  .card { background: var(--surface); border-radius: var(--radius-lg); border: 1px solid var(--border); padding: 24px; margin-bottom: 20px; }
+  .card h3 { font-size: 15px; font-weight: 700; margin-bottom: 10px; }
+  .card .sub { font-size: 13px; color: var(--text-muted); margin-bottom: 12px; }
+
+  /* CODE BLOCKS */
+  pre { background: #111827; color: #E5E7EB; border-radius: var(--radius); padding: 16px; font-size: 12.5px; overflow-x: auto; line-height: 1.7; margin: 10px 0; font-family: 'Cascadia Code', 'Fira Mono', monospace; }
+  code { background: rgba(0,0,0,0.07); padding: 1px 5px; border-radius: 4px; font-size: 13px; font-family: monospace; }
+
+  /* CALLOUT */
+  .callout { border-radius: var(--radius); padding: 14px 18px; margin: 16px 0; font-size: 14px; border-left: 4px solid; }
+  .callout.critical { background: var(--red-light); border-color: var(--red); color: var(--red-dark); }
+  .callout.warning { background: var(--amber-light); border-color: var(--amber); color: var(--amber-dark); }
+  .callout.info { background: var(--blue-light); border-color: var(--blue); color: var(--blue-dark); }
+  .callout.success { background: var(--green-light); border-color: var(--green); color: var(--green-dark); }
+  .callout strong { font-weight: 700; }
+
+  /* CHECKLIST */
+  .checklist { list-style: none; padding: 0; }
+  .checklist li { padding: 8px 0 8px 30px; border-bottom: 1px solid rgba(0,0,0,0.06); font-size: 14px; position: relative; }
+  .checklist li::before { content: '☐'; position: absolute; left: 4px; color: var(--text-muted); font-size: 16px; top: 6px; }
+  .checklist li:last-child { border-bottom: none; }
+
+  /* SCORE GRID */
+  .score-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 28px; }
+  .score-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 18px; }
+  .score-card .metric { font-size: 13px; color: var(--text-muted); margin-bottom: 6px; }
+  .score-card .value { font-size: 26px; font-weight: 700; }
+  .score-card .bar { height: 5px; background: rgba(0,0,0,0.08); border-radius: 99px; margin-top: 10px; overflow: hidden; }
+  .score-card .fill { height: 100%; border-radius: 99px; }
+  .fill.red { background: var(--red); }
+  .fill.amber { background: var(--amber); }
+  .fill.green { background: var(--green); }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media(max-width:700px){ .two-col { grid-template-columns: 1fr; } .score-row { flex-direction: column; } }
+
+  /* Fix code */
+  .fix-box { background: #0F1923; border-radius: var(--radius); padding: 4px 0; margin: 10px 0; }
+  .fix-label { font-size: 11px; color: #9CA3AF; padding: 6px 14px 4px; font-family: monospace; border-bottom: 1px solid rgba(255,255,255,0.07); }
+  .fix-box pre { margin: 0; border-radius: 0; background: transparent; padding: 10px 16px; }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+<!-- HEADER -->
+<div class="report-header">
+  <h1>🔍 JobPulse India — Full Production Audit</h1>
+  <p>Next.js 16 · Supabase · TypeScript · Tailwind v4 · React 19 — Reviewed May 2026</p>
+  <div class="score-row">
+    <div class="score-badge red"><div class="num">3.2<span style="font-size:16px">/10</span></div><div class="lbl">Overall Rating</div></div>
+    <div class="score-badge red"><div class="num">18%</div><div class="lbl">Production Ready</div></div>
+    <div class="score-badge red"><div class="num">2/10</div><div class="lbl">Security Score</div></div>
+    <div class="score-badge amber"><div class="num">5/10</div><div class="lbl">Scalability</div></div>
+    <div class="score-badge amber"><div class="num">4.5/10</div><div class="lbl">UI/UX Score</div></div>
+  </div>
+  <div class="verdict">❌ NOT PRODUCTION READY — NEEDS MAJOR FIXES</div>
+</div>
+
+<!-- EXECUTIVE SUMMARY -->
+<div class="callout critical">
+  <strong>🚨 CRITICAL SUMMARY:</strong> JobPulse has a live Supabase Service Role key committed in .env.local (admin-level DB access), mock/hardcoded data shown as "real analytics," no rate limiting on any API, no input validation/sanitization, broken middleware auth, 5 of 6 pages fully disconnected from the API, a publicly exposed password-minimum of 6 chars, and zero error tracking or logging. This cannot go live without fixing the security issues first.
+</div>
+
+<!-- SECTION A -->
+<h2 class="section-title">A. 🚨 Critical Issues — Fix First <span class="pill red">BLOCKERS</span></h2>
+
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>#</th><th>Issue</th><th>Location</th><th>Why It's Critical</th><th>Priority</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>C1</strong></td>
+      <td><strong>Service Role Key in .env.local committed to zip</strong><br>The full Supabase service_role JWT is visible in the uploaded zip archive. Anyone with this key bypasses all Row Level Security and has full admin DB access.</td>
+      <td><code>.env.local</code></td>
+      <td>Instant total DB compromise. Attacker can read, write, delete all user records, bypass RLS, and impersonate any user.</td>
+      <td><span class="prio critical">CRITICAL</span></td>
+    </tr>
+    <tr>
+      <td><strong>C2</strong></td>
+      <td><strong>Auth token stored in localStorage</strong><br>JWT access token is stored in <code>localStorage</code> via <code>providers.tsx</code>, making it readable by any JS on the page (XSS attack vector).</td>
+      <td><code>app/providers.tsx</code></td>
+      <td>If any dependency has XSS, attacker steals all auth tokens silently.</td>
+      <td><span class="prio critical">CRITICAL</span></td>
+    </tr>
+    <tr>
+      <td><strong>C3</strong></td>
+      <td><strong>Middleware auth check is broken/bypassable</strong><br>Middleware checks <code>auth_token</code> cookie, but login stores token in localStorage and cookie is set via JS <code>document.cookie</code> without <code>HttpOnly</code> or <code>Secure</code> flags.</td>
+      <td><code>middleware.ts</code>, <code>providers.tsx</code></td>
+      <td>Protected routes can be accessed directly. Cookie is also stealable via XSS.</td>
+      <td><span class="prio critical">CRITICAL</span></td>
+    </tr>
+    <tr>
+      <td><strong>C4</strong></td>
+      <td><strong>No rate limiting on any API route</strong><br>Login, register, profile update, search — all have zero rate limiting. Open to brute force and credential stuffing.</td>
+      <td>All <code>app/api/*</code> routes</td>
+      <td>Automated attacks can brute-force any account. Search API can be scraped for all user data.</td>
+      <td><span class="prio critical">CRITICAL</span></td>
+    </tr>
+    <tr>
+      <td><strong>C5</strong></td>
+      <td><strong>profile/route.ts PUT accepts arbitrary field updates</strong><br><code>const updates = await request.json()</code> spreads user-supplied object directly into <code>.update({...updates})</code> — any field (including role, id) can be overwritten.</td>
+      <td><code>app/api/user/profile/route.ts</code></td>
+      <td>Mass assignment vulnerability. Attacker can set any column value, e.g. <code>id</code> or inject SQL-adjacent attacks via malformed JSONB.</td>
+      <td><span class="prio critical">CRITICAL</span></td>
+    </tr>
+    <tr>
+      <td><strong>C6</strong></td>
+      <td><strong>Dashboard, Search, Rankings, Profile pages use 100% hardcoded mock data</strong><br>All numbers are fake, hardcoded arrays. The API endpoints exist but are never called.</td>
+      <td><code>dashboard/page.tsx</code>, <code>search/page.tsx</code>, <code>rankings/page.tsx</code>, <code>profile/page.tsx</code></td>
+      <td>Deceptive to users. Makes the product non-functional. Users cannot see their own data or real analytics.</td>
+      <td><span class="prio critical">CRITICAL</span></td>
+    </tr>
+    <tr>
+      <td><strong>C7</strong></td>
+      <td><strong>Analytics API fetches ALL user rows into memory</strong><br><code>global/route.ts</code> does <code>select('employment_status')</code> — fetches every row for counting, then processes in Node.js. Same in skills/state routes.</td>
+      <td><code>app/api/analytics/*/route.ts</code></td>
+      <td>With 10k+ users this causes massive memory spikes and slow responses. At 100k users, the API will time out.</td>
+      <td><span class="prio critical">CRITICAL</span></td>
+    </tr>
+    <tr>
+      <td><strong>C8</strong></td>
+      <td><strong>console.log leaks credentials in production</strong><br>Register route logs: Supabase URL, key existence, user email, register payload.</td>
+      <td><code>app/api/auth/register/route.ts</code></td>
+      <td>Credentials visible in Vercel/server logs. PII leak violates privacy.</td>
+      <td><span class="prio critical">CRITICAL</span></td>
+    </tr>
+    <tr>
+      <td><strong>C9</strong></td>
+      <td><strong>Forgot password route doesn't exist but is linked</strong><br><code>/auth/forgot-password</code> is linked in the login page but the page/route doesn't exist → 404.</td>
+      <td><code>app/auth/login/page.tsx</code></td>
+      <td>Users who forget their password are completely stuck. No recovery flow.</td>
+      <td><span class="prio critical">CRITICAL</span></td>
+    </tr>
+    <tr>
+      <td><strong>C10</strong></td>
+      <td><strong>Google OAuth callback does not set auth cookies/localStorage</strong><br>OAuth users are redirected to <code>/dashboard</code> but the app never stores the Supabase session in localStorage/cookies, so they appear logged out immediately.</td>
+      <td><code>app/auth/callback/route.ts</code></td>
+      <td>Google login silently fails. Users are confused — they see dashboard briefly then get kicked out.</td>
+      <td><span class="prio critical">CRITICAL</span></td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<!-- SECTION B -->
+<h2 class="section-title">B. ⚡ Quick Wins — High Impact, Low Effort <span class="pill amber">HIGH</span></h2>
+
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>#</th><th>Issue</th><th>Fix</th><th>Priority</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Q1</strong></td><td><strong>Remove all console.log statements</strong> — 14+ logs leak user emails, keys existence, and internal errors to production logs</td><td>Use a proper logger (e.g. <code>pino</code>) with <code>NODE_ENV</code> guard or remove entirely</td><td><span class="prio high">HIGH</span></td></tr>
+    <tr><td><strong>Q2</strong></td><td><strong>next-auth is installed but never used</strong> — <code>next-auth</code> is in package.json but the app uses a custom auth system. Dead dependency.</td><td>Remove <code>next-auth</code> from package.json to reduce bundle + attack surface</td><td><span class="prio high">HIGH</span></td></tr>
+    <tr><td><strong>Q3</strong></td><td><strong>next.config.ts is completely empty</strong> — no image domains, no security headers, no CSP</td><td>Add <code>headers()</code> with X-Frame-Options, CSP, HSTS, X-Content-Type-Options</td><td><span class="prio high">HIGH</span></td></tr>
+    <tr><td><strong>Q4</strong></td><td><strong>Navbar shows Login/Register even when logged in</strong> — auth state is never read in Navbar, so authenticated users see both auth buttons and their profile link simultaneously</td><td>Consume <code>useAuth()</code> in Navbar and conditionally render buttons vs user menu</td><td><span class="prio high">HIGH</span></td></tr>
+    <tr><td><strong>Q5</strong></td><td><strong>Password minimum is 6 characters</strong> — industry minimum is 8–12 with complexity requirements</td><td>Enforce min 8 chars + uppercase + number on both front and back end</td><td><span class="prio high">HIGH</span></td></tr>
+    <tr><td><strong>Q6</strong></td><td><strong>Missing email validation on server side</strong> — register route only checks if field is non-empty, no format validation</td><td>Add regex or <code>zod</code> email schema validation in register route</td><td><span class="prio high">HIGH</span></td></tr>
+    <tr><td><strong>Q7</strong></td><td><strong>Search API is open to public — no auth check</strong> — <code>/api/search/users</code> returns user data (name, state, degree, skills) to unauthenticated callers</td><td>Add bearer token check or move to public-but-limited data only</td><td><span class="prio high">HIGH</span></td></tr>
+    <tr><td><strong>Q8</strong></td><td><strong>StatCard component accepts <code>value</code> as <code>string | number</code> but there's no type guard</strong> — passing a number to a value expecting string causes runtime display issues</td><td>Normalize to string in StatCard or add TypeScript discriminated union</td><td><span class="prio medium">MEDIUM</span></td></tr>
+    <tr><td><strong>Q9</strong></td><td><strong>Missing OG/social meta tags</strong> — no og:image, og:title, Twitter card tags in layout.tsx</td><td>Add Open Graph meta tags in <code>layout.tsx</code> metadata export</td><td><span class="prio medium">MEDIUM</span></td></tr>
+    <tr><td><strong>Q10</strong></td><td><strong>Missing 404 and error.tsx pages</strong> — Next.js falls back to default error pages which are unstyled</td><td>Create <code>app/not-found.tsx</code> and <code>app/error.tsx</code></td><td><span class="prio medium">MEDIUM</span></td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- SECTION C -->
+<h2 class="section-title">C. 🚧 Production Blockers <span class="pill red">CRITICAL</span></h2>
+
+<div class="two-col">
+  <div class="card">
+    <h3>🔑 Secret Key Rotation Required Immediately</h3>
+    <div class="sub">The Supabase service role key is in the uploaded zip and must be rotated NOW.</div>
+    <div class="callout critical"><strong>Action:</strong> Go to Supabase Dashboard → Settings → API → Regenerate service_role key. Then update .env.local and NEVER commit it again.</div>
+    <pre># .env.local — correct structure
+NEXT_PUBLIC_SUPABASE_URL=...
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+SUPABASE_SERVICE_ROLE_KEY=... # server-only, never NEXT_PUBLIC_</pre>
+  </div>
+  <div class="card">
+    <h3>📦 Build Will Likely Fail</h3>
+    <div class="sub">lucide-react v1.16.0 does not exist (latest stable is ~0.470). This will fail npm install.</div>
+    <div class="callout critical"><strong>Fix:</strong> Change to <code>"lucide-react": "^0.470.0"</code> in package.json</div>
+    <pre># package.json
+"lucide-react": "^0.470.0",  // was ^1.16.0 (doesn't exist)</pre>
+  </div>
+</div>
+
+<div class="two-col">
+  <div class="card">
+    <h3>🌐 NEXTAUTH_URL set to localhost</h3>
+    <div class="sub">.env.local has <code>NEXTAUTH_URL=http://localhost:3001</code>. In production this causes OAuth redirects to fail.</div>
+    <div class="callout warning"><strong>Fix:</strong> Set this to your production domain, or remove entirely since next-auth isn't used.</div>
+  </div>
+  <div class="card">
+    <h3>📊 Charts are Placeholder Divs</h3>
+    <div class="sub">recharts is installed and included in the bundle but the dashboard has literal placeholder text: <em>"Chart placeholder - Recharts integration coming"</em></div>
+    <div class="callout warning"><strong>Fix:</strong> Either implement charts or remove recharts from dependencies to reduce bundle size.</div>
+  </div>
+</div>
+
+<div class="card">
+  <h3>🗄️ analytics_cache Table Has No TTL Logic</h3>
+  <div class="sub">The <code>analytics_cache</code> table has a <code>ttl</code> column but no code anywhere reads or enforces it. Cache never expires. No Supabase scheduled function or cron job references it.</div>
+  <pre>-- Fix: Add Supabase Edge Function or pg_cron to expire stale cache
+-- Also: the analytics API never writes TO or reads FROM this table — it's completely unused</pre>
+</div>
+
+<!-- SECTION D -->
+<h2 class="section-title">D. 🔐 Security Fixes <span class="pill red">CRITICAL</span></h2>
+
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>Vulnerability</th><th>Location</th><th>Risk</th><th>Fix</th><th>Priority</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>Mass Assignment via unsanitized PUT body</strong></td>
+      <td><code>api/user/profile/route.ts</code></td>
+      <td>Attacker sends <code>{"id": "victim-uuid"}</code> to overwrite any user's row</td>
+      <td>Whitelist allowed fields in an allowlist array before passing to Supabase</td>
+      <td><span class="prio critical">CRITICAL</span></td>
+    </tr>
+    <tr>
+      <td><strong>JWT in localStorage (XSS risk)</strong></td>
+      <td><code>providers.tsx</code></td>
+      <td>Any script can read <code>localStorage.auth_token</code></td>
+      <td>Store token only in HttpOnly cookie set server-side</td>
+      <td><span class="prio critical">CRITICAL</span></td>
+    </tr>
+    <tr>
+      <td><strong>Cookie set without HttpOnly / Secure</strong></td>
+      <td><code>providers.tsx</code></td>
+      <td>JS-accessible cookie = XSS steals session</td>
+      <td>Set cookie server-side in API response with <code>Set-Cookie: ...; HttpOnly; Secure; SameSite=Lax</code></td>
+      <td><span class="prio critical">CRITICAL</span></td>
+    </tr>
+    <tr>
+      <td><strong>No CSRF protection on state-changing routes</strong></td>
+      <td>All POST/PUT routes</td>
+      <td>Malicious sites can trigger authenticated actions</td>
+      <td>Verify <code>Origin</code> header or use Supabase's built-in PKCE flow</td>
+      <td><span class="prio high">HIGH</span></td>
+    </tr>
+    <tr>
+      <td><strong>No input sanitization</strong></td>
+      <td>Register, Profile, Employment routes</td>
+      <td>Stored XSS if user data is rendered as HTML</td>
+      <td>Sanitize all text inputs; never use <code>dangerouslySetInnerHTML</code></td>
+      <td><span class="prio high">HIGH</span></td>
+    </tr>
+    <tr>
+      <td><strong>Search query injected directly into Supabase ilike</strong></td>
+      <td><code>api/search/users/route.ts</code></td>
+      <td>Potential wildcard abuse, ReDoS attack surface</td>
+      <td>Sanitize <code>q</code> param, limit length to 100 chars, escape special chars</td>
+      <td><span class="prio high">HIGH</span></td>
+    </tr>
+    <tr>
+      <td><strong>No rate limiting</strong></td>
+      <td>All API routes</td>
+      <td>Brute force logins, data scraping, DDoS</td>
+      <td>Use Vercel Edge middleware with upstash/ratelimit or Supabase's built-in throttle</td>
+      <td><span class="prio critical">CRITICAL</span></td>
+    </tr>
+    <tr>
+      <td><strong>RLS: employment_history UPDATE policy missing</strong></td>
+      <td><code>database.sql</code></td>
+      <td>Any authenticated user can UPDATE any employment history row</td>
+      <td>Add UPDATE policy: <code>USING (auth.uid() = user_id)</code></td>
+      <td><span class="prio high">HIGH</span></td>
+    </tr>
+    <tr>
+      <td><strong>RLS: users DELETE policy missing</strong></td>
+      <td><code>database.sql</code></td>
+      <td>Authenticated user could delete their own or others' rows depending on client access</td>
+      <td>Add explicit DELETE policy or deny all deletes via RLS</td>
+      <td><span class="prio high">HIGH</span></td>
+    </tr>
+    <tr>
+      <td><strong>Email confirmation disabled (email_confirm: true skipped)</strong></td>
+      <td><code>api/auth/register/route.ts</code></td>
+      <td>Anyone can register with any email (no verification), enabling impersonation and spam</td>
+      <td>Enable email verification in Supabase Auth settings and remove the admin override</td>
+      <td><span class="prio high">HIGH</span></td>
+    </tr>
+    <tr>
+      <td><strong>Security headers missing</strong></td>
+      <td><code>next.config.ts</code></td>
+      <td>Clickjacking, MIME sniffing, no CSP</td>
+      <td>Add X-Frame-Options, CSP, HSTS, X-Content-Type-Options in next.config.ts headers()</td>
+      <td><span class="prio high">HIGH</span></td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="card">
+  <h3>🔒 Critical Fix: Whitelist profile updates</h3>
+  <div class="fix-box">
+    <div class="fix-label">app/api/user/profile/route.ts — PUT handler</div>
+<pre>// BEFORE (DANGEROUS):
+const updates = await request.json();
+await supabase.from('users').update({ ...updates }).eq('id', user.user.id);
+
+// AFTER (SAFE):
+const ALLOWED_FIELDS = ['full_name','gender','dob','phone','state','district','city',
+  'degree','branch','college','passout_year','percentage','skills',
+  'employment_status','company_name','job_role','salary_range','expected_salary','bio'];
+
+const rawUpdates = await request.json();
+const updates = Object.fromEntries(
+  Object.entries(rawUpdates).filter(([k]) => ALLOWED_FIELDS.includes(k))
+);
+if (Object.keys(updates).length === 0) {
+  return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 });
+}</pre>
+  </div>
+</div>
+
+<div class="card">
+  <h3>🔒 Critical Fix: Add rate limiting middleware</h3>
+  <div class="fix-box">
+    <div class="fix-label">middleware.ts — add rate limit with Upstash (free tier)</div>
+<pre>import { Ratelimit } from '@upstash/ratelimit';
+import { Redis } from '@upstash/redis';
+
+const ratelimit = new Ratelimit({
+  redis: Redis.fromEnv(),
+  limiter: Ratelimit.slidingWindow(10, '1 m'), // 10 req/min per IP
+});
+
+export async function middleware(request: NextRequest) {
+  if (request.nextUrl.pathname.startsWith('/api/auth/')) {
+    const ip = request.ip ?? '127.0.0.1';
+    const { success } = await ratelimit.limit(ip);
+    if (!success) {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+    }
+  }
+  // ... rest of middleware
+}</pre>
+  </div>
+</div>
+
+<!-- SECTION E -->
+<h2 class="section-title">E. 🎨 UI/UX Improvements <span class="pill amber">HIGH</span></h2>
+
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>#</th><th>Issue</th><th>Impact</th><th>Fix</th><th>Priority</th></tr></thead>
+  <tbody>
+    <tr><td><strong>U1</strong></td><td><strong>Dashboard shows "Chart placeholder" text in production</strong> — recharts is installed but charts are never implemented; empty gray boxes with "(Chart placeholder - Recharts integration coming)" text</td><td>Destroys trust, looks unfinished</td><td>Implement PieChart + BarChart using recharts with real API data</td><td><span class="prio critical">CRITICAL</span></td></tr>
+    <tr><td><strong>U2</strong></td><td><strong>Profile page shows hardcoded "Raj Kumar" data</strong> — logged-in user always sees someone else's profile</td><td>Core feature broken</td><td>Fetch from <code>useAuth()</code> context or call <code>/api/user/profile</code></td><td><span class="prio critical">CRITICAL</span></td></tr>
+    <tr><td><strong>U3</strong></td><td><strong>Navbar never shows logged-in state</strong> — always shows Login + Register buttons regardless of auth state</td><td>Confusing UX, auth feels broken</td><td>Add <code>useAuth()</code> to Navbar: show avatar + logout when authenticated</td><td><span class="prio high">HIGH</span></td></tr>
+    <tr><td><strong>U4</strong></td><td><strong>No loading skeleton states</strong> — pages show blank white screen while loading, then jump to content</td><td>Perceived performance feels slow</td><td>Add skeleton loaders for cards, tables, and charts</td><td><span class="prio high">HIGH</span></td></tr>
+    <tr><td><strong>U5</strong></td><td><strong>No empty states</strong> — search returns nothing visible when no results found except boolean <code>searched === true</code></td><td>Users think the feature is broken</td><td>Add illustrated empty state with friendly message and CTA</td><td><span class="prio high">HIGH</span></td></tr>
+    <tr><td><strong>U6</strong></td><td><strong>Home page hero shows hardcoded "10,000+ Users" with emoji</strong> — emoji in UI components look unprofessional on non-Apple devices</td><td>Trust signal is fake</td><td>Replace emoji with Lucide icons; connect stats to real API</td><td><span class="prio high">HIGH</span></td></tr>
+    <tr><td><strong>U7</strong></td><td><strong>No form validation feedback</strong> — register/profile forms show no inline validation; errors appear only on submit</td><td>Poor UX for form completion</td><td>Add field-level validation with real-time feedback on blur</td><td><span class="prio medium">MEDIUM</span></td></tr>
+    <tr><td><strong>U8</strong></td><td><strong>Mobile menu does not close on navigation</strong> — clicking a link in mobile hamburger menu doesn't close it</td><td>Janky mobile navigation</td><td>Add <code>setIsOpen(false)</code> to Link onClick handlers in mobile menu</td><td><span class="prio medium">MEDIUM</span></td></tr>
+    <tr><td><strong>U9</strong></td><td><strong>Google SVG icon colors are wrong</strong> — all 4 Google logo paths use <code>fill="currentColor"</code> making the logo a single flat color instead of multicolor</td><td>Looks amateur</td><td>Use the correct hexcodes (#4285F4, #34A853, #FBBC05, #EA4335) for each path</td><td><span class="prio medium">MEDIUM</span></td></tr>
+    <tr><td><strong>U10</strong></td><td><strong>No success/feedback toasts</strong> — profile updates, employment updates happen silently with no user confirmation</td><td>Users don't know if action worked</td><td>Add toast notification system (react-hot-toast or sonner)</td><td><span class="prio medium">MEDIUM</span></td></tr>
+    <tr><td><strong>U11</strong></td><td><strong>No pagination or infinite scroll on search</strong> — hardcoded <code>.limit(50)</code> with no UI for navigating results</td><td>Unusable with large user base</td><td>Implement cursor-based pagination with next/prev controls</td><td><span class="prio medium">MEDIUM</span></td></tr>
+    <tr><td><strong>U12</strong></td><td><strong>Rankings page has no real data or filters</strong> — purely hardcoded static data displayed as if live</td><td>Misleading to users</td><td>Connect to <code>/api/analytics/state</code>, add filter by degree/state</td><td><span class="prio high">HIGH</span></td></tr>
+    <tr><td><strong>U13</strong></td><td><strong>No avatar/profile photo upload</strong> — profile_photo field exists in DB and User type but upload UI doesn't exist</td><td>Incomplete core feature</td><td>Add Supabase Storage bucket + image upload in profile/edit page</td><td><span class="prio medium">MEDIUM</span></td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- SECTION F -->
+<h2 class="section-title">F. 🗄️ Database Improvements <span class="pill amber">HIGH</span></h2>
+
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>#</th><th>Issue</th><th>Fix</th><th>Priority</th></tr></thead>
+  <tbody>
+    <tr><td><strong>D1</strong></td><td><strong>Analytics computed in Node.js, not in DB</strong> — fetches ALL user rows to count employment statuses in JavaScript</td><td>Use Postgres <code>COUNT(*) FILTER (WHERE employment_status = 'Employed')</code> GROUP BY query</td><td><span class="prio critical">CRITICAL</span></td></tr>
+    <tr><td><strong>D2</strong></td><td><strong>analytics_cache table is completely unused</strong> — no code reads from or writes to it</td><td>Either implement cache reads/writes in analytics routes or drop the table</td><td><span class="prio high">HIGH</span></td></tr>
+    <tr><td><strong>D3</strong></td><td><strong>Missing employment_history UPDATE RLS policy</strong> — anyone can update any history record</td><td>Add: <code>CREATE POLICY "Users update own history" ON employment_history FOR UPDATE USING (auth.uid() = user_id)</code></td><td><span class="prio high">HIGH</span></td></tr>
+    <tr><td><strong>D4</strong></td><td><strong>Missing employment_history DELETE RLS policy</strong></td><td>Add DELETE policy or explicitly deny all</td><td><span class="prio high">HIGH</span></td></tr>
+    <tr><td><strong>D5</strong></td><td><strong>Missing index on skills column for array containment queries</strong> — <code>skills.cs.{query}</code> does full table scan</td><td>Add GIN index: <code>CREATE INDEX idx_users_skills ON users USING GIN(skills)</code></td><td><span class="prio high">HIGH</span></td></tr>
+    <tr><td><strong>D6</strong></td><td><strong>Missing composite index for analytics queries</strong> — state + employment_status queried together but no composite index</td><td>Add: <code>CREATE INDEX idx_users_state_status ON users(state, employment_status)</code></td><td><span class="prio medium">MEDIUM</span></td></tr>
+    <tr><td><strong>D7</strong></td><td><strong>phone column is UNIQUE but stored as empty string ''</strong> — login route creates profile with <code>phone: ''</code>, which will fail UNIQUE constraint on second OAuth user</td><td>Change phone to nullable: remove UNIQUE constraint or use NULL instead of empty string</td><td><span class="prio high">HIGH</span></td></tr>
+    <tr><td><strong>D8</strong></td><td><strong>salary_range stored as VARCHAR (e.g. "10-15 LPA")</strong> — unqueryable for salary range filtering</td><td>Add <code>salary_min INTEGER</code> and <code>salary_max INTEGER</code> columns in LPA (lakhs/year) for proper range filtering</td><td><span class="prio medium">MEDIUM</span></td></tr>
+    <tr><td><strong>D9</strong></td><td><strong>No soft delete mechanism</strong> — there's no <code>deleted_at</code> or <code>is_active</code> column</td><td>Add <code>is_active BOOLEAN DEFAULT TRUE</code> to users table for account deactivation</td><td><span class="prio medium">MEDIUM</span></td></tr>
+    <tr><td><strong>D10</strong></td><td><strong>employment_history has no is_current flag</strong> — no way to distinguish current job from past jobs</td><td>Add <code>is_current BOOLEAN DEFAULT FALSE</code> column to employment_history</td><td><span class="prio medium">MEDIUM</span></td></tr>
+    <tr><td><strong>D11</strong></td><td><strong>No full-text search index on full_name</strong> — name search uses ILIKE which does full table scan</td><td>Add: <code>CREATE INDEX idx_users_name_fts ON users USING GIN(to_tsvector('english', full_name))</code></td><td><span class="prio medium">MEDIUM</span></td></tr>
+    <tr><td><strong>D12</strong></td><td><strong>Missing UTs: union territories of India</strong> — utils.ts has Ladakh but missing Delhi NCT, Chandigarh, Puducherry, Lakshadweep, Andaman & Nicobar, Dadra & Nagar Haveli, Daman & Diu, J&K</td><td>Add all 8 UTs to the indianStates array</td><td><span class="prio low">LOW</span></td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="card">
+  <h3>⚡ Analytics Query Fix — Move aggregation to DB</h3>
+  <div class="fix-box">
+    <div class="fix-label">app/api/analytics/global/route.ts — BEFORE (fetches all rows)</div>
+<pre>// BAD: Loads every user row into Node memory
+const { data: statusBreakdown } = await supabase.from('users').select('employment_status');
+const employed = statusBreakdown?.filter(u => u.employment_status === 'Employed').length;</pre>
+  </div>
+  <div class="fix-box">
+    <div class="fix-label">app/api/analytics/global/route.ts — AFTER (single aggregation query)</div>
+<pre>// GOOD: Single efficient DB query
+const { data } = await supabase.rpc('get_employment_stats');
+// Or use raw query:
+const { data } = await supabase
+  .from('users')
+  .select('employment_status, count:id.count()')
+  .group('employment_status');
+// Returns: [{ employment_status: 'Employed', count: 523 }, ...]</pre>
+  </div>
+</div>
+
+<!-- SECTION G -->
+<h2 class="section-title">G. ⚡ Performance Improvements <span class="pill amber">MEDIUM</span></h2>
+
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>#</th><th>Issue</th><th>Fix</th><th>Priority</th></tr></thead>
+  <tbody>
+    <tr><td><strong>P1</strong></td><td><strong>recharts (~400KB) and next-auth (~80KB) are bundled but neither is fully used</strong></td><td>Remove next-auth entirely; lazy-load recharts with dynamic() + ssr:false</td><td><span class="prio high">HIGH</span></td></tr>
+    <tr><td><strong>P2</strong></td><td><strong>Supabase client created on every API request</strong> — every route file instantiates a new <code>createClient()</code> at module level, causing connection pool issues</td><td>Create singleton pattern or use <code>@supabase/ssr</code> for server-side usage</td><td><span class="prio high">HIGH</span></td></tr>
+    <tr><td><strong>P3</strong></td><td><strong>Analytics API has no caching</strong> — every dashboard load triggers 3 separate full-table scans</td><td>Cache with Next.js <code>revalidate</code> (ISR) or Upstash Redis; analytics don't need real-time updates</td><td><span class="prio high">HIGH</span></td></tr>
+    <tr><td><strong>P4</strong></td><td><strong>next.config.ts has no image optimization config</strong> — <code>&lt;img&gt;</code> tags used instead of Next.js <code>&lt;Image&gt;</code> (logo.png is unoptimized)</td><td>Replace all <code>&lt;img&gt;</code> with <code>next/image</code>; add image domains to next.config</td><td><span class="prio medium">MEDIUM</span></td></tr>
+    <tr><td><strong>P5</strong></td><td><strong>Supabase client duplicated across 8 files</strong> — same <code>createClient()</code> code in every route file</td><td>Create shared <code>lib/supabase-server.ts</code> for server-side client, use existing <code>lib/supabase.ts</code> for client-side</td><td><span class="prio medium">MEDIUM</span></td></tr>
+    <tr><td><strong>P6</strong></td><td><strong>Auth check on every protected page load makes 2 API calls</strong> — <code>checkAuth</code> in useEffect fires on every mount, even when token is fresh</td><td>Cache user state; use Supabase's <code>onAuthStateChange</code> listener instead of polling</td><td><span class="prio medium">MEDIUM</span></td></tr>
+    <tr><td><strong>P7</strong></td><td><strong>No font preloading strategy</strong> — Geist Sans and Geist Mono loaded for all pages but only needed for specific sections</td><td>Use <code>display: 'swap'</code> and subset to Latin only (already done) — also add <code>preload: true</code></td><td><span class="prio low">LOW</span></td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- SECTION H -->
+<h2 class="section-title">H. 📊 Sheet/XLSX Review <span class="pill blue">N/A</span></h2>
+<div class="callout info">
+  <strong>No XLSX/CSV files were included in the uploaded zip.</strong> The archive contained only source code files (.ts, .tsx, .sql, .md, .json, .css). If you have Excel/CSV data files to review, please upload them separately and a full spreadsheet audit will be performed covering: missing columns, formula errors, broken calculations, data normalization, required dashboards, and automation opportunities.
+</div>
+
+<!-- SECTION I -->
+<h2 class="section-title">I. ✅ Go-Live Checklist <span class="pill green">REQUIRED</span></h2>
+
+<div class="two-col">
+<div>
+<h3 style="margin-bottom:12px;font-size:15px;font-weight:700;">🔐 Security (All REQUIRED before go-live)</h3>
+<ul class="checklist">
+  <li>Rotate Supabase service role key immediately</li>
+  <li>Move token storage from localStorage to HttpOnly cookie</li>
+  <li>Add rate limiting to all auth endpoints</li>
+  <li>Whitelist allowed fields in profile PUT endpoint</li>
+  <li>Add security headers in next.config.ts</li>
+  <li>Enable email verification on registration</li>
+  <li>Add RLS UPDATE + DELETE policies for employment_history</li>
+  <li>Add CSRF protection on state-changing routes</li>
+  <li>Input sanitization on all form fields</li>
+  <li>Minimum 8-char password with complexity</li>
+</ul>
+</div>
+<div>
+<h3 style="margin-bottom:12px;font-size:15px;font-weight:700;">🚀 Functionality (All REQUIRED)</h3>
+<ul class="checklist">
+  <li>Wire dashboard to real <code>/api/analytics/global</code> endpoint</li>
+  <li>Wire search page to real <code>/api/search/users</code> endpoint</li>
+  <li>Wire profile page to real user data from auth context</li>
+  <li>Wire rankings page to real analytics API</li>
+  <li>Fix Google OAuth callback to persist session</li>
+  <li>Build forgot password page + flow</li>
+  <li>Implement real charts with recharts</li>
+  <li>Add Navbar auth state awareness</li>
+  <li>Fix lucide-react version in package.json</li>
+  <li>Remove next-auth (unused dependency)</li>
+</ul>
+</div>
+</div>
+
+<div class="two-col" style="margin-top:20px">
+<div>
+<h3 style="margin-bottom:12px;font-size:15px;font-weight:700;">📈 Performance &amp; Production</h3>
+<ul class="checklist">
+  <li>Move analytics aggregation to Postgres queries</li>
+  <li>Add ISR caching to analytics endpoints (revalidate: 300)</li>
+  <li>Replace all &lt;img&gt; with next/image</li>
+  <li>Remove all console.log from production code</li>
+  <li>Add error tracking (Sentry free tier)</li>
+  <li>Add Vercel Analytics or Plausible</li>
+  <li>Set up environment variables in Vercel dashboard</li>
+  <li>Enable Vercel Web Vitals monitoring</li>
+</ul>
+</div>
+<div>
+<h3 style="margin-bottom:12px;font-size:15px;font-weight:700;">🎨 UI/UX</h3>
+<ul class="checklist">
+  <li>Add 404 and error.tsx pages</li>
+  <li>Add loading skeleton states</li>
+  <li>Add empty state components</li>
+  <li>Add toast notifications for user actions</li>
+  <li>Fix mobile menu close-on-navigate</li>
+  <li>Fix Google icon multicolor display</li>
+  <li>Add pagination to search results</li>
+  <li>Add profile photo upload to Supabase Storage</li>
+  <li>Add Open Graph + Twitter Card meta tags</li>
+  <li>Accessibility audit (aria-labels, contrast ratios)</li>
+</ul>
+</div>
+</div>
+
+<!-- FINAL SCORES -->
+<h2 class="section-title">📊 Final Scores &amp; Verdict</h2>
+
+<div class="score-grid">
+  <div class="score-card">
+    <div class="metric">Overall Rating</div>
+    <div class="value" style="color:var(--red)">3.2 / 10</div>
+    <div class="bar"><div class="fill red" style="width:32%"></div></div>
+  </div>
+  <div class="score-card">
+    <div class="metric">Production Readiness</div>
+    <div class="value" style="color:var(--red)">18%</div>
+    <div class="bar"><div class="fill red" style="width:18%"></div></div>
+  </div>
+  <div class="score-card">
+    <div class="metric">Security Score</div>
+    <div class="value" style="color:var(--red)">2 / 10</div>
+    <div class="bar"><div class="fill red" style="width:20%"></div></div>
+  </div>
+  <div class="score-card">
+    <div class="metric">Code Quality</div>
+    <div class="value" style="color:var(--amber)">4 / 10</div>
+    <div class="bar"><div class="fill amber" style="width:40%"></div></div>
+  </div>
+  <div class="score-card">
+    <div class="metric">UI/UX Score</div>
+    <div class="value" style="color:var(--amber)">4.5 / 10</div>
+    <div class="bar"><div class="fill amber" style="width:45%"></div></div>
+  </div>
+  <div class="score-card">
+    <div class="metric">Scalability</div>
+    <div class="value" style="color:var(--amber)">5 / 10</div>
+    <div class="bar"><div class="fill amber" style="width:50%"></div></div>
+  </div>
+  <div class="score-card">
+    <div class="metric">DB Design</div>
+    <div class="value" style="color:var(--amber)">5.5 / 10</div>
+    <div class="bar"><div class="fill amber" style="width:55%"></div></div>
+  </div>
+  <div class="score-card">
+    <div class="metric">API Design</div>
+    <div class="value" style="color:var(--amber)">4 / 10</div>
+    <div class="bar"><div class="fill amber" style="width:40%"></div></div>
+  </div>
+</div>
+
+<div class="callout critical">
+  <strong>🔴 FINAL VERDICT: NOT PRODUCTION READY</strong><br><br>
+  JobPulse India has a solid concept and a reasonable technology stack choice (Next.js + Supabase). The DB schema is mostly sane. However, the current build cannot go live because: (1) a real service role key was committed and must be rotated; (2) every primary page shows hardcoded mock data that cannot be distinguished from real data by users; (3) there is zero rate limiting, mass-assignment vulnerability in profile updates, and auth tokens stored insecurely. The Google OAuth flow is broken. Charts are placeholder divs. The forgot-password page doesn't exist but is linked.<br><br>
+  <strong>Estimated time to production-ready:</strong> 3–4 weeks of focused full-stack work.<br>
+  <strong>Fix order:</strong> Security (C1–C10) → Functionality (wire real data) → DB improvements → UI polish → Performance → Monitoring.
+</div>
+
+<div style="margin-top:40px;padding:20px;background:var(--gray-light);border-radius:var(--radius-lg);font-size:13px;color:var(--gray-dark);">
+  Audit completed May 2026 · Reviewed: 47 files · 10 critical issues · 13 high issues · 14 medium issues · 3 low issues · Total: 40 issues found
+</div>
+
+</div>
+</body>
+</html>

@@ -15,8 +15,6 @@ export async function POST(request: NextRequest) {
   try {
     const { email, password } = await request.json();
 
-    console.log('Login attempt for:', email);
-
     if (!email || !password) {
       return NextResponse.json(
         { error: 'Email and password required' },
@@ -30,10 +28,7 @@ export async function POST(request: NextRequest) {
       password,
     });
 
-    console.log('Auth response:', { authError, userId: authData?.user?.id });
-
     if (authError || !authData.user) {
-      console.error('Auth error:', authError?.message);
       return NextResponse.json(
         { error: 'Invalid email or password' },
         { status: 401 }
@@ -48,11 +43,8 @@ export async function POST(request: NextRequest) {
       .eq('id', authData.user.id)
       .single();
 
-    console.log('Profile fetch:', { profileError, exists: !!existingProfile });
-
     if (profileError || !existingProfile) {
       // Profile doesn't exist - create it automatically
-      console.log('Profile not found, creating one...');
       const { data: newProfile, error: createError } = await supabaseAdmin
         .from('users')
         .insert([
@@ -70,7 +62,6 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (createError) {
-        console.error('Failed to create profile:', createError);
         return NextResponse.json(
           { error: 'Failed to complete login' },
           { status: 500 }
@@ -82,19 +73,43 @@ export async function POST(request: NextRequest) {
       userProfile = existingProfile;
     }
 
-    console.log('Login successful for:', email);
+    // Set HttpOnly, Secure cookies for access and refresh tokens so middleware
+    // can validate sessions server-side without exposing tokens to JS.
+    const response = NextResponse.json({ success: true, user: userProfile }, { status: 200 });
 
-    return NextResponse.json(
-      {
-        success: true,
-        user: userProfile,
-        session: {
-          access_token: authData.session?.access_token,
-          refresh_token: authData.session?.refresh_token,
-        },
-      },
-      { status: 200 }
-    );
+    const accessToken = authData.session?.access_token;
+    const refreshToken = authData.session?.refresh_token;
+
+    // Determine maxAge from expires_at if available (expires_at is epoch seconds)
+    let accessMaxAge = undefined as number | undefined;
+    if (authData.session?.expires_at) {
+      const expiresMs = authData.session.expires_at * 1000;
+      const maxAgeSeconds = Math.max(0, Math.floor((expiresMs - Date.now()) / 1000));
+      accessMaxAge = maxAgeSeconds || undefined;
+    }
+
+    if (accessToken) {
+      response.cookies.set('auth_token', accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: accessMaxAge,
+      });
+    }
+
+    if (refreshToken) {
+      // Refresh token usually has longer lifetime; use a safe default 30 days if expires unknown
+      response.cookies.set('auth_refresh', refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 60 * 60 * 24 * 30,
+      });
+    }
+
+    return response;
   } catch (error) {
     console.error('Login error:', error);
     return NextResponse.json(

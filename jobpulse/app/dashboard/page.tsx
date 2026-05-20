@@ -21,21 +21,20 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch analytics data from API
     const fetchAnalytics = async () => {
       try {
-        // This will be replaced with actual API call
-        // const response = await fetch('/api/analytics/global');
-        // const data = await response.json();
-        // setAnalytics(data);
-
-        // Mock data for now
-        setAnalytics({
-          total_users: 10234,
-          total_unemployed: 4521,
-          total_employed: 5713,
-          employment_rate: 55.8,
-        });
+        const response = await fetch('/api/analytics/global');
+        if (response.ok) {
+          const data = await response.json();
+          setAnalytics({
+            total_users: data.total_users || 0,
+            total_unemployed: data.total_unemployed || 0,
+            total_employed: data.total_employed || 0,
+            employment_rate: data.employment_rate || 0,
+          });
+        } else {
+          console.error('Analytics API returned', response.status);
+        }
       } catch (error) {
         console.error('Error fetching analytics:', error);
       } finally {

@@ -41,8 +41,10 @@ export default function Register() {
       setError('Email is required');
       return false;
     }
-    if (!formData.email.includes('@')) {
-      setError('Please enter a valid email');
+    // Email regex validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setError('Please enter a valid email address');
       return false;
     }
     if (!formData.phone) {
@@ -61,8 +63,18 @@ export default function Register() {
       setError('Password is required');
       return false;
     }
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters');
+    if (formData.password.length < 8) {
+      setError('Password must be at least 8 characters');
+      return false;
+    }
+    // Check for at least one uppercase letter
+    if (!/[A-Z]/.test(formData.password)) {
+      setError('Password must contain at least one uppercase letter');
+      return false;
+    }
+    // Check for at least one number
+    if (!/[0-9]/.test(formData.password)) {
+      setError('Password must contain at least one number');
       return false;
     }
     if (formData.password !== formData.confirmPassword) {
@@ -246,7 +258,7 @@ export default function Register() {
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
               </div>
-              <p className="text-xs text-gray-500 mt-1">At least 8 characters</p>
+              <p className="text-xs text-gray-500 mt-1">At least 8 characters, 1 uppercase letter, 1 number</p>
             </div>
 
             {/* Confirm Password */}

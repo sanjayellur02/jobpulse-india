@@ -8,37 +8,51 @@ const supabase = createClient(
 
 export async function GET(request: NextRequest) {
   try {
-    // Get total users
+    // Efficient counts using PostgREST head queries (COUNT only) to avoid
+    // loading all rows into Node memory. This issues several lightweight
+    // COUNT(*) queries rather than a single large data fetch.
+
+    // Total users
     const { count: totalUsers } = await supabase
       .from('users')
       .select('*', { count: 'exact', head: true });
 
-    // Get employment status breakdown
-    const { data: statusBreakdown } = await supabase
-      .from('users')
-      .select('employment_status');
+    const statuses = ['Employed', 'Unemployed', 'Internship', 'Freelancing', 'Part-time'];
 
-    // Get state-wise count
-    const { data: stateBreakdown } = await supabase
-      .from('users')
-      .select('state');
+    const statusCounts = await Promise.all(
+      statuses.map(async (s) => {
+        const { count } = await supabase
+          .from('users')
+          .select('*', { count: 'exact', head: true })
+          .eq('employment_status', s);
+        return { status: s, count: count || 0 };
+      })
+    );
 
-    // Calculate statistics
-    const employed = statusBreakdown?.filter(u => u.employment_status === 'Employed').length || 0;
-    const unemployed = statusBreakdown?.filter(u => u.employment_status === 'Unemployed').length || 0;
-    const internship = statusBreakdown?.filter(u => u.employment_status === 'Internship').length || 0;
-    const freelancing = statusBreakdown?.filter(u => u.employment_status === 'Freelancing').length || 0;
-    const partTime = statusBreakdown?.filter(u => u.employment_status === 'Part-time').length || 0;
+    const employed = statusCounts.find((c) => c.status === 'Employed')?.count || 0;
+    const unemployed = statusCounts.find((c) => c.status === 'Unemployed')?.count || 0;
+    const internship = statusCounts.find((c) => c.status === 'Internship')?.count || 0;
+    const freelancing = statusCounts.find((c) => c.status === 'Freelancing')?.count || 0;
+    const partTime = statusCounts.find((c) => c.status === 'Part-time')?.count || 0;
 
     const employmentRate = totalUsers ? ((employed / totalUsers) * 100).toFixed(1) : '0';
 
-    // State-wise summary
-    const stateStats = new Map();
-    stateBreakdown?.forEach((user) => {
-      if (user.state) {
-        stateStats.set(user.state, (stateStats.get(user.state) || 0) + 1);
-      }
-    });
+    // Top states — count per known state using lib/utils.indianStates to bound queries
+    const { indianStates } = await import('@/lib/utils');
+
+    const stateCounts = await Promise.all(
+      indianStates.map(async (st) => {
+        const { count } = await supabase
+          .from('users')
+          .select('*', { count: 'exact', head: true })
+          .eq('state', st);
+        return { state: st, count: count || 0 };
+      })
+    );
+
+    const topStates = stateCounts
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
 
     return NextResponse.json({
       total_users: totalUsers || 0,
@@ -48,19 +62,11 @@ export async function GET(request: NextRequest) {
       total_freelancing: freelancing,
       total_part_time: partTime,
       employment_rate: parseFloat(employmentRate),
-      unemployment_rate: totalUsers
-        ? ((unemployed / totalUsers) * 100).toFixed(1)
-        : '0',
-      top_states: Array.from(stateStats.entries())
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 5)
-        .map(([state, count]) => ({ state, count })),
+      unemployment_rate: totalUsers ? ((unemployed / totalUsers) * 100).toFixed(1) : '0',
+      top_states: topStates,
     });
   } catch (error) {
     console.error('Error fetching analytics:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
