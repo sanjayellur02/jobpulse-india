@@ -15,12 +15,15 @@ export default function StatCard({
   trend,
   description,
 }: StatCardProps) {
+  // Normalize value to string for consistent rendering (Q8)
+  const displayValue = String(value);
+
   return (
     <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-600">
       <div className="flex justify-between items-start">
         <div>
           <p className="text-gray-600 text-sm font-medium">{title}</p>
-          <p className="text-3xl font-bold text-gray-800 mt-2">{value}</p>
+          <p className="text-3xl font-bold text-gray-800 mt-2">{displayValue}</p>
           {description && <p className="text-gray-500 text-xs mt-1">{description}</p>}
         </div>
         {icon && <div className="text-blue-600 text-2xl">{icon}</div>}

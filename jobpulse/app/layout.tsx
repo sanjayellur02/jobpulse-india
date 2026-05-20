@@ -18,6 +18,30 @@ export const metadata: Metadata = {
   title: "JobPulse India - Live Unemployment Analytics",
   description: "India's largest live unemployment transparency platform. Track employment status and view real-time analytics.",
   keywords: ["unemployment", "employment", "analytics", "jobs", "India"],
+  // Open Graph meta tags (Q9)
+  openGraph: {
+    title: "JobPulse India - Live Unemployment Analytics",
+    description: "India's largest live unemployment transparency platform. Track employment status and view real-time analytics.",
+    url: "https://jobpulse-india.vercel.app",
+    siteName: "JobPulse India",
+    type: "website",
+    images: [
+      {
+        url: "/logo.png",
+        width: 1200,
+        height: 630,
+        alt: "JobPulse India",
+      },
+    ],
+  },
+  // Twitter Card meta tags (Q9)
+  twitter: {
+    card: "summary_large_image",
+    title: "JobPulse India - Live Unemployment Analytics",
+    description: "India's largest live unemployment transparency platform. Track employment status and view real-time analytics.",
+    images: ["/logo.png"],
+    creator: "@jobpulseindia",
+  },
 };
 
 export default function RootLayout({
