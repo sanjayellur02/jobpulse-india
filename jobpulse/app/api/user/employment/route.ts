@@ -101,7 +101,8 @@ export async function POST(request: NextRequest) {
       .eq('id', authData.user.id);
 
     if (updateError) {
-      return NextResponse.json({ error: updateError.message }, { status: 400 });
+      console.error('Employment update failed:', updateError);
+      return NextResponse.json({ error: 'Failed to update employment status' }, { status: 400 });
     }
 
     // ── Insert employment history for Employed status ──────

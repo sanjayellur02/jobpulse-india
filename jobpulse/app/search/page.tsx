@@ -23,8 +23,11 @@ export default function SearchPage() {
   const [searched, setSearched] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [page, setPage] = useState(0);
+  const [total, setTotal] = useState(0);
+  const [pageSize, setPageSize] = useState(20);
 
-  const handleSearch = async () => {
+  const handleSearch = async (targetPage = 0) => {
     setSearched(true);
     setLoading(true);
     setError('');
@@ -35,6 +38,7 @@ export default function SearchPage() {
       if (filters.state) params.set('state', filters.state);
       if (filters.degree) params.set('degree', filters.degree);
       if (filters.status) params.set('status', filters.status);
+      params.set('page', String(targetPage));
 
       const res = await fetch(`/api/search/users?${params.toString()}`, {
         credentials: 'include',
@@ -47,13 +51,21 @@ export default function SearchPage() {
       }
 
       setResults(data.users ?? []);
+      setTotal(data.total ?? 0);
+      setPage(data.page ?? targetPage);
+      setPageSize(data.pageSize ?? 20);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Search failed');
       setResults([]);
+      setTotal(0);
     } finally {
       setLoading(false);
     }
   };
+
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const canGoBack = page > 0 && !loading;
+  const canGoNext = page + 1 < totalPages && !loading;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -68,7 +80,7 @@ export default function SearchPage() {
         <form
           onSubmit={(event) => {
             event.preventDefault();
-            handleSearch();
+            handleSearch(0);
           }}
           className="bg-white rounded-lg shadow-md p-6 mb-8"
         >
@@ -157,41 +169,81 @@ export default function SearchPage() {
 
         {searched && (
           <div>
-            <p className="text-gray-600 mb-6">Found {results.length} results</p>
-            <div className="space-y-4">
-              {results.map((user) => (
-                <div key={user.id} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <h2 className="text-2xl font-bold text-gray-800">{user.full_name}</h2>
-                      <p className="text-gray-600">{user.degree} from {user.state}</p>
-                    </div>
-                    <span className={`px-4 py-2 rounded-full font-semibold ${
-                      user.employment_status === 'Employed'
-                        ? 'bg-green-100 text-green-800'
-                        : user.employment_status === 'Unemployed'
-                        ? 'bg-red-100 text-red-800'
-                        : 'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      {user.employment_status}
-                    </span>
-                  </div>
-                  <div className="mb-4">
-                    <p className="text-sm text-gray-600 mb-2">Skills:</p>
-                    <div className="flex flex-wrap gap-2">
-                      {user.skills.map((skill) => (
-                        <span key={skill} className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
-                          {skill}
+            <p className="text-gray-600 mb-6">
+              Found {total.toLocaleString()} result{total === 1 ? '' : 's'}
+            </p>
+
+            {results.length ? (
+              <>
+                <div className="space-y-4">
+                  {results.map((user) => (
+                    <div key={user.id} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
+                      <div className="flex justify-between items-start mb-4">
+                        <div>
+                          <h2 className="text-2xl font-bold text-gray-800">{user.full_name}</h2>
+                          <p className="text-gray-600">{user.degree || 'Degree not added'} from {user.state || 'State not added'}</p>
+                        </div>
+                        <span className={`px-4 py-2 rounded-full font-semibold ${
+                          user.employment_status === 'Employed'
+                            ? 'bg-green-100 text-green-800'
+                            : user.employment_status === 'Unemployed'
+                            ? 'bg-red-100 text-red-800'
+                            : 'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {user.employment_status}
                         </span>
-                      ))}
+                      </div>
+                      <div className="mb-4">
+                        <p className="text-sm text-gray-600 mb-2">Skills:</p>
+                        <div className="flex flex-wrap gap-2">
+                          {(user.skills ?? []).length ? (
+                            user.skills.map((skill) => (
+                              <span key={skill} className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
+                                {skill}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="text-sm text-gray-500">No skills added</span>
+                          )}
+                        </div>
+                      </div>
+                      <button className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                        View Profile
+                      </button>
                     </div>
-                  </div>
-                  <button className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                    View Profile
+                  ))}
+                </div>
+
+                <div className="mt-8 flex items-center justify-between">
+                  <button
+                    type="button"
+                    disabled={!canGoBack}
+                    onClick={() => handleSearch(page - 1)}
+                    className="px-5 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Previous
+                  </button>
+                  <span className="text-sm text-gray-600">
+                    Page {page + 1} of {totalPages}
+                  </span>
+                  <button
+                    type="button"
+                    disabled={!canGoNext}
+                    onClick={() => handleSearch(page + 1)}
+                    className="px-5 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Next
                   </button>
                 </div>
-              ))}
-            </div>
+              </>
+            ) : (
+              !loading && (
+                <div className="bg-white rounded-lg shadow-md p-10 text-center text-gray-600">
+                  <p className="text-xl font-semibold text-gray-800 mb-2">No matching profiles found</p>
+                  <p>Try a broader keyword or remove one of the filters.</p>
+                </div>
+              )
+            )}
           </div>
         )}
 

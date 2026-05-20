@@ -1,12 +1,11 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useState } from 'react';
 import { Mail, ArrowLeft } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 
 export default function ForgotPassword() {
-  const router = useRouter();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -48,7 +47,7 @@ export default function ForgotPassword() {
         {/* Header */}
         <div className="text-center mb-8">
           <div className="w-24 h-24 rounded-full overflow-hidden shadow-xl mx-auto mb-4 border-4 border-blue-600">
-            <img src="/logo.png" alt="JobPulse India" className="w-full h-full object-cover" />
+            <Image src="/logo.png" alt="JobPulse India" width={96} height={96} className="w-full h-full object-cover" />
           </div>
           <h1 className="text-3xl font-bold text-gray-800">Reset Password</h1>
           <p className="text-gray-600 mt-2">Enter your email to receive a reset link</p>

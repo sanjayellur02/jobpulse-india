@@ -70,7 +70,8 @@ export async function GET(request: NextRequest) {
       .order('full_name', { ascending: true });
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      console.error('User search failed:', error);
+      return NextResponse.json({ error: 'Search failed' }, { status: 400 });
     }
 
     return NextResponse.json({

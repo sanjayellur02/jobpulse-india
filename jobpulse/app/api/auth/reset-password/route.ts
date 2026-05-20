@@ -37,13 +37,15 @@ export async function POST(request: NextRequest) {
     const { data, error } = await supabase.auth.updateUser({ password });
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      console.error('Password reset update failed:', error);
+      return NextResponse.json({ error: 'Failed to reset password' }, { status: 400 });
     }
 
     return NextResponse.json({ success: true, user: data.user });
   } catch (err) {
+    console.error('Password reset error:', err);
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : 'An error occurred' },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }

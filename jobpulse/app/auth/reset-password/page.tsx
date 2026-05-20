@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, Suspense } from 'react';
 import { Lock, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 
 function ResetPasswordForm() {
   const router = useRouter();
@@ -14,14 +15,13 @@ function ResetPasswordForm() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
-  const [error, setError] = useState('');
   const token = searchParams.get('token');
-
-  useEffect(() => {
-    if (!token) {
-      setError('Invalid reset link. Please request a new password reset.');
-    }
-  }, [token]);
+  const [error, setError] = useState(token ? '' : 'Invalid reset link. Please request a new password reset.');
+  const passwordRules = [
+    { label: 'At least 8 characters', isValid: password.length >= 8 },
+    { label: 'At least 1 uppercase letter', isValid: /[A-Z]/.test(password) },
+    { label: 'At least 1 number', isValid: /[0-9]/.test(password) },
+  ];
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -38,8 +38,18 @@ function ResetPasswordForm() {
       return;
     }
 
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters long');
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters');
+      return;
+    }
+
+    if (!/[A-Z]/.test(password)) {
+      setError('Password must contain at least one uppercase letter');
+      return;
+    }
+
+    if (!/[0-9]/.test(password)) {
+      setError('Password must contain at least one number');
       return;
     }
 
@@ -99,7 +109,7 @@ function ResetPasswordForm() {
         {/* Header */}
         <div className="text-center mb-8">
           <div className="w-24 h-24 rounded-full overflow-hidden shadow-xl mx-auto mb-4 border-4 border-blue-600">
-            <img src="/logo.png" alt="JobPulse India" className="w-full h-full object-cover" />
+            <Image src="/logo.png" alt="JobPulse India" width={96} height={96} className="w-full h-full object-cover" />
           </div>
           <h1 className="text-3xl font-bold text-gray-800">Create New Password</h1>
           <p className="text-gray-600 mt-2">Enter your new password below</p>
@@ -145,6 +155,16 @@ function ResetPasswordForm() {
                 >
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
+              </div>
+              <div className="mt-2 space-y-1" aria-live="polite">
+                {passwordRules.map((rule) => (
+                  <p
+                    key={rule.label}
+                    className={`text-xs ${rule.isValid ? 'text-green-700' : 'text-gray-500'}`}
+                  >
+                    {rule.isValid ? 'OK' : 'Required'}: {rule.label}
+                  </p>
+                ))}
               </div>
             </div>
 

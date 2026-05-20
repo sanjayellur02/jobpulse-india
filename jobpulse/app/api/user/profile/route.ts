@@ -85,7 +85,8 @@ export async function PUT(request: NextRequest) {
       .eq('id', authData.user.id);
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      console.error('Profile update failed:', error);
+      return NextResponse.json({ error: 'Failed to update profile' }, { status: 400 });
     }
 
     const { data: updatedProfile } = await supabase

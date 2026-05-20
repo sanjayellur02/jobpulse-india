@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
             id: authData.user.id,
             full_name: email.split('@')[0], // Default name from email
             email,
-            phone: '',
+            phone: null,
             employment_status: 'Unemployed',
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useState } from 'react';
 import { Menu, X, LogOut, User } from 'lucide-react';
 import { useAuth } from '@/app/providers';
@@ -28,7 +29,7 @@ export default function Navbar() {
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
             <div className="w-10 h-10 rounded-full overflow-hidden shadow-md hover:shadow-lg transition-shadow border-2 border-blue-600">
-              <img src="/logo.png" alt="JobPulse India" className="w-full h-full object-cover" />
+              <Image src="/logo.png" alt="JobPulse India" width={40} height={40} className="w-full h-full object-cover" />
             </div>
             <span className="font-bold text-lg text-gray-800 hidden md:inline">
               JobPulse India

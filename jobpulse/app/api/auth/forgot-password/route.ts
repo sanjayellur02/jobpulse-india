@@ -17,18 +17,20 @@ export async function POST(request: NextRequest) {
     });
 
     if (error) {
+      console.error('Forgot password request failed:', error);
       // Don't leak whether email exists or not (security best practice)
       // Supabase returns an error if email not found, but we still return 200 OK
       if (error.message.includes('not found')) {
         return NextResponse.json({ success: true });
       }
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      return NextResponse.json({ error: 'Failed to send reset email' }, { status: 400 });
     }
 
     return NextResponse.json({ success: true });
   } catch (err) {
+    console.error('Forgot password error:', err);
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : 'An error occurred' },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }

@@ -5,13 +5,16 @@
 -- ============================================
 -- 1. CREATE USERS TABLE
 -- ============================================
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
 CREATE TABLE IF NOT EXISTS users (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   full_name VARCHAR(255) NOT NULL,
   profile_photo TEXT,
   gender VARCHAR(50),
   dob DATE,
-  phone VARCHAR(20) UNIQUE,
+  phone VARCHAR(20),
   email VARCHAR(255) UNIQUE NOT NULL,
   country VARCHAR(100) DEFAULT 'India',
   state VARCHAR(100),
@@ -30,9 +33,13 @@ CREATE TABLE IF NOT EXISTS users (
   salary_range VARCHAR(50),
   expected_salary INTEGER,
   bio TEXT,
+  is_active BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+ALTER TABLE users DROP CONSTRAINT IF EXISTS users_phone_key;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE;
 
 -- ============================================
 -- 2. CREATE EMPLOYMENT HISTORY TABLE
@@ -45,9 +52,12 @@ CREATE TABLE IF NOT EXISTS employment_history (
   salary_range VARCHAR(50),
   joining_date DATE,
   end_date DATE,
+  is_current BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+ALTER TABLE employment_history ADD COLUMN IF NOT EXISTS is_current BOOLEAN DEFAULT FALSE;
 
 -- ============================================
 -- 3. CREATE ANALYTICS CACHE TABLE
@@ -67,6 +77,10 @@ CREATE INDEX IF NOT EXISTS idx_users_state ON users(state);
 CREATE INDEX IF NOT EXISTS idx_users_degree ON users(degree);
 CREATE INDEX IF NOT EXISTS idx_users_employment_status ON users(employment_status);
 CREATE INDEX IF NOT EXISTS idx_users_college ON users(college);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_phone_unique_not_null ON users(phone) WHERE phone IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_users_skills ON users USING GIN(skills);
+CREATE INDEX IF NOT EXISTS idx_users_state_status ON users(state, employment_status);
+CREATE INDEX IF NOT EXISTS idx_users_name_trgm ON users USING GIN(full_name gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_employment_history_user_id ON employment_history(user_id);
 CREATE INDEX IF NOT EXISTS idx_analytics_cache_key ON analytics_cache(key);
 
@@ -115,6 +129,19 @@ CREATE POLICY "Users can insert own employment history" ON employment_history
   FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
+-- Policy: Users can update their own employment history only
+DROP POLICY IF EXISTS "Users can update own employment history" ON employment_history;
+CREATE POLICY "Users can update own employment history" ON employment_history
+  FOR UPDATE
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+-- Policy: Users can delete their own employment history only
+DROP POLICY IF EXISTS "Users can delete own employment history" ON employment_history;
+CREATE POLICY "Users can delete own employment history" ON employment_history
+  FOR DELETE
+  USING (auth.uid() = user_id);
+
 -- ============================================
 -- 8. CREATE FUNCTIONS
 -- ============================================
@@ -138,6 +165,7 @@ AS $$
     COALESCE(employment_status, 'Unknown') AS employment_status,
     COUNT(*)::BIGINT AS count
   FROM users
+  WHERE COALESCE(is_active, TRUE)
   GROUP BY COALESCE(employment_status, 'Unknown')
   ORDER BY count DESC, employment_status ASC;
 $$;
@@ -153,6 +181,7 @@ AS $$
     COUNT(*)::BIGINT AS total_users,
     COUNT(*) FILTER (WHERE employment_status = 'Employed')::BIGINT AS employed_users
   FROM users
+  WHERE COALESCE(is_active, TRUE)
   GROUP BY COALESCE(state, 'Unknown')
   ORDER BY total_users DESC, state ASC;
 $$;
@@ -168,6 +197,7 @@ AS $$
     COUNT(*)::BIGINT AS count
   FROM users
   WHERE state = target_state
+    AND COALESCE(is_active, TRUE)
   GROUP BY COALESCE(employment_status, 'Unknown')
   ORDER BY count DESC, employment_status ASC;
 $$;
@@ -183,6 +213,7 @@ AS $$
     COUNT(*)::BIGINT AS total_users,
     COUNT(*) FILTER (WHERE employment_status = 'Employed')::BIGINT AS employed_users
   FROM users
+  WHERE COALESCE(is_active, TRUE)
   GROUP BY COALESCE(degree, 'Unknown')
   ORDER BY total_users DESC, degree ASC;
 $$;
@@ -198,6 +229,7 @@ AS $$
     COUNT(*)::BIGINT AS count
   FROM users,
   LATERAL unnest(COALESCE(skills, ARRAY[]::TEXT[])) AS skill
+  WHERE COALESCE(is_active, TRUE)
   GROUP BY skill
   ORDER BY count DESC, skill ASC
   LIMIT 15;
