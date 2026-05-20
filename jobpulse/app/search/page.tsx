@@ -65,7 +65,13 @@ export default function SearchPage() {
         </div>
 
         {/* Search Bar */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            handleSearch();
+          }}
+          className="bg-white rounded-lg shadow-md p-6 mb-8"
+        >
           <div className="flex gap-4 flex-col lg:flex-row">
             {/* Main Search */}
             <div className="flex-1">
@@ -89,7 +95,7 @@ export default function SearchPage() {
 
             {/* Search Button */}
             <button
-              onClick={handleSearch}
+              type="submit"
               className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold"
             >
               Search
@@ -104,9 +110,9 @@ export default function SearchPage() {
               className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">All States</option>
-              <option value="karnataka">Karnataka</option>
-              <option value="tamil-nadu">Tamil Nadu</option>
-              <option value="maharashtra">Maharashtra</option>
+              <option value="Karnataka">Karnataka</option>
+              <option value="Tamil Nadu">Tamil Nadu</option>
+              <option value="Maharashtra">Maharashtra</option>
             </select>
 
             <select
@@ -115,9 +121,16 @@ export default function SearchPage() {
               className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">All Degrees</option>
-              <option value="btech">B.Tech</option>
-              <option value="bca">BCA</option>
-              <option value="mtech">M.Tech</option>
+              <option value="B.Tech">B.Tech</option>
+              <option value="B.E.">B.E.</option>
+              <option value="B.Sc">B.Sc</option>
+              <option value="B.A">B.A</option>
+              <option value="B.Com">B.Com</option>
+              <option value="Diploma">Diploma</option>
+              <option value="ITI">ITI</option>
+              <option value="M.Tech">M.Tech</option>
+              <option value="MBA">MBA</option>
+              <option value="Other">Other</option>
             </select>
 
             <select
@@ -126,12 +139,14 @@ export default function SearchPage() {
               className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">All Status</option>
-              <option value="employed">Employed</option>
-              <option value="unemployed">Unemployed</option>
-              <option value="internship">Internship</option>
+              <option value="Employed">Employed</option>
+              <option value="Unemployed">Unemployed</option>
+              <option value="Internship">Internship</option>
+              <option value="Freelancing">Freelancing</option>
+              <option value="Part-time">Part-time</option>
             </select>
           </div>
-        </div>
+        </form>
 
         {/* Results */}
         {error && (

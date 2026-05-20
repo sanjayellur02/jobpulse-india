@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "zip:safe": "powershell -ExecutionPolicy Bypass -File scripts/create-safe-zip.ps1"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.106.0",

@@ -27,10 +27,10 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/logo.png",
+        url: "/og-card.png",
         width: 1200,
         height: 630,
-        alt: "JobPulse India",
+        alt: "JobPulse India live unemployment analytics social preview",
       },
     ],
   },
@@ -39,7 +39,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "JobPulse India - Live Unemployment Analytics",
     description: "India's largest live unemployment transparency platform. Track employment status and view real-time analytics.",
-    images: ["/logo.png"],
+    images: ["/og-card.png"],
     creator: "@jobpulseindia",
   },
 };

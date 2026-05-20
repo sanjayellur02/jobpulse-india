@@ -56,21 +56,6 @@ const nextConfig: NextConfig = {
             key: 'Referrer-Policy',
             value: 'strict-origin-when-cross-origin',
           },
-          // Content Security Policy to prevent XSS/injection attacks
-          {
-            key: 'Content-Security-Policy',
-            value: `
-              default-src 'self';
-              script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.vercel-analytics.com;
-              style-src 'self' 'unsafe-inline';
-              img-src 'self' data: https: blob:;
-              font-src 'self' data:;
-              connect-src 'self' https://*.supabase.co https://cdn.vercel-analytics.com https://vercel-analytics.com;
-              frame-ancestors 'self';
-              base-uri 'self';
-              form-action 'self';
-            `.replace(/\n/g, ' '),
-          },
           // Permissions policy (formerly Feature Policy)
           {
             key: 'Permissions-Policy',

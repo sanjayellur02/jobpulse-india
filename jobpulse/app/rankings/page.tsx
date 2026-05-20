@@ -19,6 +19,20 @@ type DegreeRanking = {
   unemployment_rate: number;
 };
 
+type StateAnalyticsRow = {
+  state: string;
+  total: number;
+  employed: number;
+  employment_rate: string;
+};
+
+type DegreeAnalyticsRow = {
+  degree: string;
+  total_users: number;
+  employed: number;
+  unemployment_rate: number;
+};
+
 export default function RankingsPage() {
   const [stateRankings, setStateRankings] = useState<StateRanking[]>([]);
   const [degreeRankings, setDegreeRankings] = useState<DegreeRanking[]>([]);
@@ -35,7 +49,7 @@ export default function RankingsPage() {
         if (stateRes.ok) {
           const data = await stateRes.json();
           setStateRankings(
-            (data.state_data ?? []).map((s: any, i: number) => ({
+            ((data.state_data ?? []) as StateAnalyticsRow[]).map((s, i) => ({
               rank: i + 1,
               state: s.state,
               total_users: s.total,
@@ -48,7 +62,7 @@ export default function RankingsPage() {
         if (degreeRes.ok) {
           const data = await degreeRes.json();
           setDegreeRankings(
-            (data.degree_data ?? []).map((d: any, i: number) => ({
+            ((data.degree_data ?? []) as DegreeAnalyticsRow[]).map((d, i) => ({
               rank: i + 1,
               degree: d.degree,
               total_users: d.total_users,

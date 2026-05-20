@@ -13,7 +13,8 @@ type EmploymentStat = {
 
 type StateStat = {
   state: string;
-  count: number;
+  total_users: number;
+  employed_users: number;
 };
 
 export async function GET() {
@@ -38,9 +39,9 @@ export async function GET() {
     const totalUsers = employmentStats.reduce((sum, item) => sum + item.count, 0);
 
     const topStates = stateStats
-      .sort((a, b) => b.count - a.count)
+      .sort((a, b) => b.total_users - a.total_users)
       .slice(0, 5)
-      .map((item) => ({ state: item.state, count: item.count }));
+      .map((item) => ({ state: item.state, count: item.total_users }));
 
     const employmentRate = totalUsers ? ((employed / totalUsers) * 100).toFixed(1) : '0';
     const unemploymentRate = totalUsers ? ((unemployed / totalUsers) * 100).toFixed(1) : '0';

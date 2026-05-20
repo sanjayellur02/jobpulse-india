@@ -8,6 +8,52 @@ import {
 } from '@/lib/rate-limit';
 
 const protectedRoutes = ['/profile', '/dashboard', '/employment'];
+const isProduction = process.env.NODE_ENV === 'production';
+
+function buildCsp(nonce: string) {
+  const scriptSrc = [
+    "'self'",
+    `'nonce-${nonce}'`,
+    'https://cdn.vercel-analytics.com',
+  ];
+  const styleSrc = [
+    "'self'",
+    `'nonce-${nonce}'`,
+  ];
+
+  return [
+    "default-src 'self'",
+    `script-src ${scriptSrc.join(' ')}`,
+    `style-src ${styleSrc.join(' ')}`,
+    "img-src 'self' data: https: blob:",
+    "font-src 'self' data:",
+    "connect-src 'self' https://*.supabase.co https://cdn.vercel-analytics.com https://vercel-analytics.com",
+    "frame-ancestors 'self'",
+    "base-uri 'self'",
+    "form-action 'self'",
+  ].join('; ');
+}
+
+function nextResponseWithSecurityHeaders(request: NextRequest) {
+  if (!isProduction) return NextResponse.next();
+
+  const nonce = crypto.randomUUID().replace(/-/g, '');
+  const requestHeaders = new Headers(request.headers);
+  const csp = buildCsp(nonce);
+
+  requestHeaders.set('x-nonce', nonce);
+  requestHeaders.set('Content-Security-Policy', csp);
+
+  const response = NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
+
+  response.headers.set('Content-Security-Policy', csp);
+  response.headers.set('x-nonce', nonce);
+  return response;
+}
 
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
@@ -42,7 +88,7 @@ export async function middleware(request: NextRequest) {
     }
 
     // Attach rate limit headers to passing responses too (good API practice)
-    const response = NextResponse.next();
+    const response = nextResponseWithSecurityHeaders(request);
     response.headers.set('X-RateLimit-Limit', String(config.limit));
     response.headers.set('X-RateLimit-Remaining', String(result.remaining));
     response.headers.set('X-RateLimit-Reset', String(Math.ceil(result.resetAt / 1000)));
@@ -53,7 +99,7 @@ export async function middleware(request: NextRequest) {
   // C3: Auth guard — protected page routes only
   // ─────────────────────────────────────────────
   const isProtected = protectedRoutes.some(route => pathname.startsWith(route));
-  if (!isProtected) return NextResponse.next();
+  if (!isProtected) return nextResponseWithSecurityHeaders(request);
 
   const token = request.cookies.get('auth_token')?.value;
   if (!token) {
@@ -78,7 +124,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/auth/login', request.url));
   }
 
-  return NextResponse.next();
+  return nextResponseWithSecurityHeaders(request);
 }
 
 export const config = {

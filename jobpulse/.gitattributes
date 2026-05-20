@@ -1,0 +1,8 @@
+.env* export-ignore
+.vercel export-ignore
+.next export-ignore
+node_modules export-ignore
+npm-debug.log* export-ignore
+yarn-debug.log* export-ignore
+yarn-error.log* export-ignore
+.pnpm-debug.log* export-ignore

@@ -3,54 +3,87 @@
 import { useState } from 'react';
 import { Save, X } from 'lucide-react';
 import Link from 'next/link';
+import { useAuth } from '@/app/providers';
 
 export default function EditProfilePage() {
-  const [formData, setFormData] = useState({
-    full_name: 'Raj Kumar',
-    email: 'raj@example.com',
-    phone: '+91 9876543210',
-    state: 'Karnataka',
-    city: 'Bangalore',
-    bio: 'Passionate software developer',
-    degree: 'B.Tech',
-    branch: 'Computer Science',
-    college: 'NIT Bangalore',
-    skills: 'JavaScript, React, Node.js, Python, SQL',
-  });
-
+  const { user, isLoading, updateProfile } = useAuth();
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError('');
+
+    const formData = new FormData(event.currentTarget);
+    const skills = String(formData.get('skills') ?? '')
+      .split(',')
+      .map((skill) => skill.trim())
+      .filter(Boolean);
+
+    try {
+      await updateProfile({
+        full_name: String(formData.get('full_name') ?? '').trim(),
+        phone: String(formData.get('phone') ?? '').trim(),
+        state: String(formData.get('state') ?? ''),
+        city: String(formData.get('city') ?? '').trim(),
+        bio: String(formData.get('bio') ?? '').trim(),
+        degree: String(formData.get('degree') ?? ''),
+        branch: String(formData.get('branch') ?? '').trim(),
+        college: String(formData.get('college') ?? '').trim(),
+        skills,
+      });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch {
+      setError('Unable to update profile. Please try again.');
+    }
   };
 
-  const handleSubmit = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
-  };
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-2xl text-gray-600">Loading profile...</div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8 text-center">
+          <h1 className="text-3xl font-bold text-gray-800 mb-3">Profile unavailable</h1>
+          <p className="text-gray-600 mb-6">Please log in to edit your profile.</p>
+          <Link href="/auth/login" className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+            Go to Login
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-2xl mx-auto px-4 py-12">
-        {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-gray-800">Edit Profile</h1>
-          <Link href="/profile" className="text-gray-600 hover:text-gray-800">
+          <Link href="/profile" className="text-gray-600 hover:text-gray-800" aria-label="Close edit profile">
             <X size={24} />
           </Link>
         </div>
 
-        {/* Success Message */}
         {saved && (
           <div className="mb-6 p-4 bg-green-100 border border-green-400 text-green-800 rounded-lg">
-            ✓ Profile updated successfully!
+            Profile updated successfully!
           </div>
         )}
 
-        {/* Form */}
-        <form className="bg-white rounded-lg shadow-md p-6 space-y-6">
-          {/* Personal Information */}
+        {error && (
+          <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-800 rounded-lg">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-md p-6 space-y-6">
           <div>
             <h2 className="text-xl font-bold text-gray-800 mb-4">Personal Information</h2>
             <div className="space-y-4">
@@ -59,8 +92,7 @@ export default function EditProfilePage() {
                 <input
                   type="text"
                   name="full_name"
-                  value={formData.full_name}
-                  onChange={handleChange}
+                  defaultValue={user.full_name}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -71,9 +103,9 @@ export default function EditProfilePage() {
                   <input
                     type="email"
                     name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={user.email}
+                    readOnly
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600"
                   />
                 </div>
                 <div>
@@ -81,8 +113,7 @@ export default function EditProfilePage() {
                   <input
                     type="tel"
                     name="phone"
-                    value={formData.phone}
-                    onChange={handleChange}
+                    defaultValue={user.phone ?? ''}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
@@ -92,8 +123,7 @@ export default function EditProfilePage() {
                 <label className="block text-sm font-semibold text-gray-700 mb-2">Bio</label>
                 <textarea
                   name="bio"
-                  value={formData.bio}
-                  onChange={handleChange}
+                  defaultValue={user.bio ?? ''}
                   rows={3}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
@@ -104,10 +134,10 @@ export default function EditProfilePage() {
                   <label className="block text-sm font-semibold text-gray-700 mb-2">State</label>
                   <select
                     name="state"
-                    value={formData.state}
-                    onChange={handleChange}
+                    defaultValue={user.state ?? ''}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
+                    <option value="">Select state</option>
                     <option>Karnataka</option>
                     <option>Tamil Nadu</option>
                     <option>Maharashtra</option>
@@ -119,8 +149,7 @@ export default function EditProfilePage() {
                   <input
                     type="text"
                     name="city"
-                    value={formData.city}
-                    onChange={handleChange}
+                    defaultValue={user.city ?? ''}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
@@ -128,7 +157,6 @@ export default function EditProfilePage() {
             </div>
           </div>
 
-          {/* Education Information */}
           <div>
             <h2 className="text-xl font-bold text-gray-800 mb-4">Education</h2>
             <div className="space-y-4">
@@ -137,10 +165,10 @@ export default function EditProfilePage() {
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Degree</label>
                   <select
                     name="degree"
-                    value={formData.degree}
-                    onChange={handleChange}
+                    defaultValue={user.degree ?? ''}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
+                    <option value="">Select degree</option>
                     <option>B.Tech</option>
                     <option>BCA</option>
                     <option>M.Tech</option>
@@ -152,8 +180,7 @@ export default function EditProfilePage() {
                   <input
                     type="text"
                     name="branch"
-                    value={formData.branch}
-                    onChange={handleChange}
+                    defaultValue={user.branch ?? ''}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
@@ -164,32 +191,27 @@ export default function EditProfilePage() {
                 <input
                   type="text"
                   name="college"
-                  value={formData.college}
-                  onChange={handleChange}
+                  defaultValue={user.college ?? ''}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
             </div>
           </div>
 
-          {/* Skills */}
           <div>
             <h2 className="text-xl font-bold text-gray-800 mb-4">Skills</h2>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Add skills (comma-separated)</label>
             <textarea
               name="skills"
-              value={formData.skills}
-              onChange={handleChange}
+              defaultValue={(user.skills ?? []).join(', ')}
               rows={3}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
-          {/* Buttons */}
           <div className="flex gap-4">
             <button
-              type="button"
-              onClick={handleSubmit}
+              type="submit"
               className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold flex items-center justify-center gap-2"
             >
               <Save size={20} />
