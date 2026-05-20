@@ -1,31 +1,62 @@
-'use client';
+"use client";
 
 import React, { useEffect, useState } from 'react';
-import { TrendingUp, Users, MapPin, Briefcase } from 'lucide-react';
+import { TrendingUp, MapPin, Briefcase } from 'lucide-react';
+
+type StateRanking = {
+  rank: number;
+  state: string;
+  total_users: number;
+  employed: number;
+  unemployment_rate: number;
+};
+
+type DegreeRanking = {
+  rank: number;
+  degree: string;
+  total_users: number;
+  employed: number;
+  unemployment_rate: number;
+};
 
 export default function RankingsPage() {
-  const [stateRankings, setStateRankings] = useState<any[]>([]);
-  const [degreeRankings, setDegreeRankings] = useState<any[]>([]);
+  const [stateRankings, setStateRankings] = useState<StateRanking[]>([]);
+  const [degreeRankings, setDegreeRankings] = useState<DegreeRanking[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchRankings = async () => {
       try {
-        const res = await fetch('/api/analytics/state');
-        if (res.ok) {
-          const data = await res.json();
-          // state_data returns array sorted by total desc
-          setStateRankings(data.state_data.map((s: any, i: number) => ({ rank: i + 1, ...s })));
+        const [stateRes, degreeRes] = await Promise.all([
+          fetch('/api/analytics/state', { credentials: 'include' }),
+          fetch('/api/analytics/degree', { credentials: 'include' }),
+        ]);
+
+        if (stateRes.ok) {
+          const data = await stateRes.json();
+          setStateRankings(
+            (data.state_data ?? []).map((s: any, i: number) => ({
+              rank: i + 1,
+              state: s.state,
+              total_users: s.total,
+              employed: s.employed,
+              unemployment_rate: Number(((100 - Number(s.employment_rate || 0))).toFixed(1)),
+            }))
+          );
         }
 
-        // Degree rankings aren't implemented via API yet — keep placeholder until backend is added
-        setDegreeRankings([
-          { degree: 'B.Tech', total_users: 3421, employed: 2156, unemployment_rate: 36.9 },
-          { degree: 'BCA', total_users: 2890, employed: 1623, unemployment_rate: 43.8 },
-          { degree: 'B.Sc', total_users: 2134, employed: 1456, unemployment_rate: 31.8 },
-          { degree: 'M.Tech', total_users: 1876, employed: 1523, unemployment_rate: 18.8 },
-          { degree: 'MBA', total_users: 1342, employed: 1234, unemployment_rate: 8.0 },
-        ]);
+        if (degreeRes.ok) {
+          const data = await degreeRes.json();
+          setDegreeRankings(
+            (data.degree_data ?? []).map((d: any, i: number) => ({
+              rank: i + 1,
+              degree: d.degree,
+              total_users: d.total_users,
+              employed: d.employed,
+              unemployment_rate: d.unemployment_rate,
+            }))
+          );
+        }
       } catch (e) {
         console.error('Failed to fetch rankings', e);
       } finally {

@@ -128,6 +128,81 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
+-- Aggregated analytics: employment status counts in one query
+CREATE OR REPLACE FUNCTION get_employment_stats()
+RETURNS TABLE (employment_status TEXT, count BIGINT)
+LANGUAGE sql
+STABLE
+AS $$
+  SELECT
+    COALESCE(employment_status, 'Unknown') AS employment_status,
+    COUNT(*)::BIGINT AS count
+  FROM users
+  GROUP BY COALESCE(employment_status, 'Unknown')
+  ORDER BY count DESC, employment_status ASC;
+$$;
+
+-- Aggregated analytics: state totals and employed counts in one query
+CREATE OR REPLACE FUNCTION get_state_stats()
+RETURNS TABLE (state TEXT, total_users BIGINT, employed_users BIGINT)
+LANGUAGE sql
+STABLE
+AS $$
+  SELECT
+    COALESCE(state, 'Unknown') AS state,
+    COUNT(*)::BIGINT AS total_users,
+    COUNT(*) FILTER (WHERE employment_status = 'Employed')::BIGINT AS employed_users
+  FROM users
+  GROUP BY COALESCE(state, 'Unknown')
+  ORDER BY total_users DESC, state ASC;
+$$;
+
+-- Aggregated analytics: detailed breakdown for a single state
+CREATE OR REPLACE FUNCTION get_state_breakdown(target_state TEXT)
+RETURNS TABLE (employment_status TEXT, count BIGINT)
+LANGUAGE sql
+STABLE
+AS $$
+  SELECT
+    COALESCE(employment_status, 'Unknown') AS employment_status,
+    COUNT(*)::BIGINT AS count
+  FROM users
+  WHERE state = target_state
+  GROUP BY COALESCE(employment_status, 'Unknown')
+  ORDER BY count DESC, employment_status ASC;
+$$;
+
+-- Aggregated analytics: degree totals and employed counts in one query
+CREATE OR REPLACE FUNCTION get_degree_stats()
+RETURNS TABLE (degree TEXT, total_users BIGINT, employed_users BIGINT)
+LANGUAGE sql
+STABLE
+AS $$
+  SELECT
+    COALESCE(degree, 'Unknown') AS degree,
+    COUNT(*)::BIGINT AS total_users,
+    COUNT(*) FILTER (WHERE employment_status = 'Employed')::BIGINT AS employed_users
+  FROM users
+  GROUP BY COALESCE(degree, 'Unknown')
+  ORDER BY total_users DESC, degree ASC;
+$$;
+
+-- Aggregated analytics: top skills in one query
+CREATE OR REPLACE FUNCTION get_skill_stats()
+RETURNS TABLE (skill TEXT, count BIGINT)
+LANGUAGE sql
+STABLE
+AS $$
+  SELECT
+    skill,
+    COUNT(*)::BIGINT AS count
+  FROM users,
+  LATERAL unnest(COALESCE(skills, ARRAY[]::TEXT[])) AS skill
+  GROUP BY skill
+  ORDER BY count DESC, skill ASC
+  LIMIT 15;
+$$;
+
 -- ============================================
 -- 9. CREATE TRIGGERS
 -- ============================================

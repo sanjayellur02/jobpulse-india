@@ -21,28 +21,38 @@ export default function SearchPage() {
   });
   const [results, setResults] = useState<SearchUser[]>([]);
   const [searched, setSearched] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSearch = () => {
+  const handleSearch = async () => {
     setSearched(true);
-    // Mock search results
-    setResults([
-      {
-        id: '1',
-        full_name: 'Raj Kumar',
-        degree: 'B.Tech',
-        state: 'Karnataka',
-        employment_status: 'Employed',
-        skills: ['JavaScript', 'React', 'Node.js'],
-      },
-      {
-        id: '2',
-        full_name: 'Priya Sharma',
-        degree: 'B.Tech',
-        state: 'Tamil Nadu',
-        employment_status: 'Unemployed',
-        skills: ['Python', 'Django', 'SQL'],
-      },
-    ]);
+    setLoading(true);
+    setError('');
+
+    try {
+      const params = new URLSearchParams();
+      if (searchTerm.trim()) params.set('q', searchTerm.trim());
+      if (filters.state) params.set('state', filters.state);
+      if (filters.degree) params.set('degree', filters.degree);
+      if (filters.status) params.set('status', filters.status);
+
+      const res = await fetch(`/api/search/users?${params.toString()}`, {
+        credentials: 'include',
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Search failed');
+      }
+
+      setResults(data.users ?? []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Search failed');
+      setResults([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -124,6 +134,12 @@ export default function SearchPage() {
         </div>
 
         {/* Results */}
+        {error && (
+          <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700">
+            {error}
+          </div>
+        )}
+
         {searched && (
           <div>
             <p className="text-gray-600 mb-6">Found {results.length} results</p>
@@ -164,9 +180,15 @@ export default function SearchPage() {
           </div>
         )}
 
-        {!searched && (
+        {!searched && !loading && (
           <div className="text-center text-gray-500 py-12">
             <p className="text-lg">Use the search bar to find profiles</p>
+          </div>
+        )}
+
+        {loading && (
+          <div className="text-center text-gray-500 py-12">
+            <p className="text-lg">Searching profiles...</p>
           </div>
         )}
       </div>

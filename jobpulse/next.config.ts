@@ -3,11 +3,23 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   // Image optimization configuration (Q3)
   images: {
-    domains: [
-      'localhost',
-      'jobpulse-india.vercel.app',
-      'supabase.co',
-      'cdn.supabase.com',
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'localhost',
+      },
+      {
+        protocol: 'https',
+        hostname: 'jobpulse-india.vercel.app',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.supabase.co',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.supabase.com',
+      },
     ],
     unoptimized: false,
     formats: ['image/avif', 'image/webp'],

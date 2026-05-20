@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
 
 export async function POST(request: NextRequest) {
   try {
@@ -9,22 +9,32 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Password and token are required' }, { status: 400 });
     }
 
-    if (password.length < 6) {
-      return NextResponse.json({ error: 'Password must be at least 6 characters' }, { status: 400 });
+    if (password.length < 8) {
+      return NextResponse.json({ error: 'Password must be at least 8 characters' }, { status: 400 });
     }
 
-    const supabase = createClient();
+    if (!/[A-Z]/.test(password)) {
+      return NextResponse.json({ error: 'Password must contain at least one uppercase letter' }, { status: 400 });
+    }
 
-    // Update password with the recovery token
-    const { data, error } = await supabase.auth.updateUser(
-      { password },
-      {
-        // Set the recovery token in the session to authenticate the update
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
+    if (!/[0-9]/.test(password)) {
+      return NextResponse.json({ error: 'Password must contain at least one number' }, { status: 400 });
+    }
+
+    // Create Supabase client with the recovery token as the session token
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
     );
+
+    // Set the token as the current session (recovery token from email link)
+    await supabase.auth.setSession({
+      access_token: token,
+      refresh_token: token, // Recovery tokens act as both
+    });
+
+    // Now update the password with the authenticated session
+    const { data, error } = await supabase.auth.updateUser({ password });
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 400 });

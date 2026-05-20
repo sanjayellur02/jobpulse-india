@@ -9,9 +9,17 @@ interface User {
   phone?: string;
   state?: string;
   city?: string;
+  degree?: string;
+  branch?: string;
+  college?: string;
+  passout_year?: number;
+  percentage?: number;
+  skills?: string[];
   employment_status?: string;
   company_name?: string;
   job_role?: string;
+  salary_range?: string;
+  bio?: string;
 }
 
 interface AuthContextType {
